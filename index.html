@@ -1,0 +1,3643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apartment Manager</title>
+<meta name="theme-color" content="#4f46e5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Apartments">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAADH0lEQVR42u3c21HrQBBFUU0XUeB8zKcJFX/ifEwaJgCekq3HHK2VAOWefZvRLZk2rOh0vN4G4pwvh7bWz27iJSnyJmKS4m5CJinsJmSSwm5CJinsEjNb8YiWSswkRd2ETNIVpMRM0rYuMZMUdYmZpKhLzCRFXWImKeoyJpKU7UzSli4xkxR1iZmkqN2hyb5D2870vKVtaHI3tO1M71vahiZzQ9vOJGxpG5rcOzREBO26Qcq1w4bGlQMEDYKGcZoHQmxoEDQIGgSNoEHQIOident/NgRBZ8UsakHHbWZRCzrumiFqQcfdmUUt6LgHQFELOiZmUc/D23Yrhfyd15cPg7ShM2K2rQUdFbOoBR0Xs6gFHRezqAUdF7OoBR0Xs6gFHRuXqAUdF5WoBR0Xk6gFHReRqAUdF4+of+Zdjs6D8f6HDR21/WxrQcfFIWpBx0UhakHHxSBqQcdFsPeoS8w+l6Adus8naIftcwraIfu8gna4+/3c5VB9/iTx73L4v9mvkt//KDHb1oJ2aOYjaIdlToJ2SOa136DFbG7lUEiaXzkMkuZYDoGkeZbhkzTXMnSS5luGTdKcu3qXQ8jr6eX9jxIzSfMvwyTpHMoQSTqPMjySzqUMjaTzifvGin8I4yV9g8WfAiOKoBE0CBoEDYJG0CBoEDQIGgSNoEHQIGgQNAiaXXkygmmWeCnelxVsaAQNggZBg6BB0AgaBA2CBkGDoBE0CBoEDYIGQSNoEDQIGgQNgkbQIGgQNAgaBI2gQdAgaBA0CBpBg6BB0CBoEDRZ2ul4vRkDNjQIGgQNgkbQIGgQNMwV9PlyaMZAgvPl0GxoXDlA0CBomBC0B0MSHghtaFw5oIugXTvo/bphQ5N95bCl6Xk729DkPxTa0vS6nW1o8je0LU2v2/nXDS1qeov5zyuHqOkpZndo9nGHtqXpcTv/e0OLmh5iHnXlEDVbj3n0HVrUbDnmSQ+FomarMQ/DMNwVpz/Fy1ZCnryhbWu2GvPdQYuaLcV895XDFYSthDxL0MJm7d/us14XhM3S19TF7r/iFvESP2fVBzqRi/fRPgFC5VJOsHuwZAAAAABJRU5ErkJggg==">
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAADH0lEQVR42u3c21HrQBBFUU0XUeB8zKcJFX/ifEwaJgCekq3HHK2VAOWefZvRLZk2rOh0vN4G4pwvh7bWz27iJSnyJmKS4m5CJinsJmSSwm5CJinsEjNb8YiWSswkRd2ETNIVpMRM0rYuMZMUdYmZpKhLzCRFXWImKeoyJpKU7UzSli4xkxR1iZmkqN2hyb5D2870vKVtaHI3tO1M71vahiZzQ9vOJGxpG5rcOzREBO26Qcq1w4bGlQMEDYKGcZoHQmxoEDQIGgSNoEHQIOident/NgRBZ8UsakHHbWZRCzrumiFqQcfdmUUt6LgHQFELOiZmUc/D23Yrhfyd15cPg7ShM2K2rQUdFbOoBR0Xs6gFHRezqAUdF7OoBR0Xs6gFHRuXqAUdF5WoBR0Xk6gFHReRqAUdF4+of+Zdjs6D8f6HDR21/WxrQcfFIWpBx0UhakHHxSBqQcdFsPeoS8w+l6Adus8naIftcwraIfu8gna4+/3c5VB9/iTx73L4v9mvkt//KDHb1oJ2aOYjaIdlToJ2SOa136DFbG7lUEiaXzkMkuZYDoGkeZbhkzTXMnSS5luGTdKcu3qXQ8jr6eX9jxIzSfMvwyTpHMoQSTqPMjySzqUMjaTzifvGin8I4yV9g8WfAiOKoBE0CBoEDYJG0CBoEDQIGgSNoEHQIGgQNAiaXXkygmmWeCnelxVsaAQNggZBg6BB0AgaBA2CBkGDoBE0CBoEDYIGQSNoEDQIGgQNgkbQIGgQNAgaBI2gQdAgaBA0CBpBg6BB0CBoEDRZ2ul4vRkDNjQIGgQNgkbQIGgQNMwV9PlyaMZAgvPl0GxoXDlA0CBomBC0B0MSHghtaFw5oIugXTvo/bphQ5N95bCl6Xk729DkPxTa0vS6nW1o8je0LU2v2/nXDS1qeov5zyuHqOkpZndo9nGHtqXpcTv/e0OLmh5iHnXlEDVbj3n0HVrUbDnmSQ+FomarMQ/DMNwVpz/Fy1ZCnryhbWu2GvPdQYuaLcV895XDFYSthDxL0MJm7d/us14XhM3S19TF7r/iFvESP2fVBzqRi/fRPgFC5VJOsHuwZAAAAABJRU5ErkJggg==">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%20%22Apartment%20Manager%22%2C%20%22short_name%22%3A%20%22Apartments%22%2C%20%22display%22%3A%20%22standalone%22%2C%20%22background_color%22%3A%20%22%23f3f4f6%22%2C%20%22theme_color%22%3A%20%22%234f46e5%22%2C%20%22start_url%22%3A%20%22.%22%2C%20%22icons%22%3A%20%5B%7B%22src%22%3A%20%22data%3Aimage/png%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAADH0lEQVR42u3c21HrQBBFUU0XUeB8zKcJFX/ifEwaJgCekq3HHK2VAOWefZvRLZk2rOh0vN4G4pwvh7bWz27iJSnyJmKS4m5CJinsJmSSwm5CJinsEjNb8YiWSswkRd2ETNIVpMRM0rYuMZMUdYmZpKhLzCRFXWImKeoyJpKU7UzSli4xkxR1iZmkqN2hyb5D2870vKVtaHI3tO1M71vahiZzQ9vOJGxpG5rcOzREBO26Qcq1w4bGlQMEDYKGcZoHQmxoEDQIGgSNoEHQIOident/NgRBZ8UsakHHbWZRCzrumiFqQcfdmUUt6LgHQFELOiZmUc/D23Yrhfyd15cPg7ShM2K2rQUdFbOoBR0Xs6gFHRezqAUdF7OoBR0Xs6gFHRuXqAUdF5WoBR0Xk6gFHReRqAUdF4%2Bof%2BZdjs6D8f6HDR21/WxrQcfFIWpBx0UhakHHxSBqQcdFsPeoS8w%2Bl6Adus8naIftcwraIfu8gna4%2B/3c5VB9/iTx73L4v9mvkt//KDHb1oJ2aOYjaIdlToJ2SOa136DFbG7lUEiaXzkMkuZYDoGkeZbhkzTXMnSS5luGTdKcu3qXQ8jr6eX9jxIzSfMvwyTpHMoQSTqPMjySzqUMjaTzifvGin8I4yV9g8WfAiOKoBE0CBoEDYJG0CBoEDQIGgSNoEHQIGgQNAiaXXkygmmWeCnelxVsaAQNggZBg6BB0AgaBA2CBkGDoBE0CBoEDYIGQSNoEDQIGgQNgkbQIGgQNAgaBI2gQdAgaBA0CBpBg6BB0CBoEDRZ2ul4vRkDNjQIGgQNgkbQIGgQNMwV9PlyaMZAgvPl0GxoXDlA0CBomBC0B0MSHghtaFw5oIugXTvo/bphQ5N95bCl6Xk729DkPxTa0vS6nW1o8je0LU2v2/nXDS1qeov5zyuHqOkpZndo9nGHtqXpcTv/e0OLmh5iHnXlEDVbj3n0HVrUbDnmSQ%2BFomarMQ/DMNwVpz/Fy1ZCnryhbWu2GvPdQYuaLcV895XDFYSthDxL0MJm7d/us14XhM3S19TF7r/iFvESP2fVBzqRi/fRPgFC5VJOsHuwZAAAAABJRU5ErkJggg%3D%3D%22%2C%20%22sizes%22%3A%20%22180x180%22%2C%20%22type%22%3A%20%22image/png%22%7D%5D%7D">
+<style>
+:root {
+  --p: #2563eb; --pd: #1d4ed8; --ok: #16a34a; --warn: #d97706; --err: #dc2626;
+  --g50: #f9fafb; --g100: #f3f4f6; --g200: #e5e7eb; --g300: #d1d5db;
+  --g500: #6b7280; --g700: #374151; --g900: #111827;
+  --r: 8px; --sh: 0 1px 3px rgba(0,0,0,.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--g50); color: var(--g900); min-height: 100vh; }
+
+/* HEADER */
+header { background: var(--p); color: #fff; padding: .875rem 1.5rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+header h1 { font-size: 1.125rem; font-weight: 700; }
+header small { opacity: .8; font-size: .8125rem; display: block; margin-top: 1px; }
+.sync-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .75rem; border-radius: 9999px; font-size: .8125rem; font-weight: 700; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.18); color: #fff; }
+.sync-badge.warn { background: #fef3c7; color: #92400e; border-color: #fbbf24; }
+
+/* NAV */
+nav { background: #fff; border-bottom: 1px solid var(--g200); overflow-x: auto; display: flex; }
+nav button { padding: .75rem 1rem; border: none; background: none; color: var(--g500); font-size: .875rem; font-weight: 500; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; transition: all .15s; }
+nav button:hover { color: var(--p); }
+nav button.active { color: var(--p); border-bottom-color: var(--p); }
+
+/* MAIN */
+main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+section { display: none; }
+section.active { display: block; }
+
+/* CARDS */
+.card { background: #fff; border: 1px solid var(--g200); border-radius: var(--r); box-shadow: var(--sh); padding: 1.5rem; margin-bottom: 1.25rem; }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: .5rem; }
+.card-title { font-size: .9375rem; font-weight: 600; }
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+.stat { background: #fff; border: 1px solid var(--g200); border-radius: var(--r); padding: 1rem 1.25rem; }
+.stat-val { font-size: 1.375rem; font-weight: 700; }
+.stat-label { font-size: .75rem; color: var(--g500); margin-top: 3px; }
+.stat-blue .stat-val { color: var(--p); }
+.stat-green .stat-val { color: var(--ok); }
+.stat-red .stat-val { color: var(--err); }
+.stat-orange .stat-val { color: var(--warn); }
+
+/* TABLES */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+th { text-align: left; padding: .5rem .75rem; background: var(--g50); border-bottom: 1px solid var(--g200); color: var(--g500); font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+td { padding: .625rem .75rem; border-bottom: 1px solid var(--g100); color: var(--g700); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--g50); }
+
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; gap: .3rem; padding: .5rem 1rem; border-radius: 6px; font-size: .875rem; font-weight: 500; cursor: pointer; border: none; transition: all .15s; text-decoration: none; }
+.btn-p { background: var(--p); color: #fff; }
+.btn-p:hover { background: var(--pd); }
+.btn-ok { background: var(--ok); color: #fff; }
+.btn-ok:hover { background: #15803d; }
+.btn-err { background: var(--err); color: #fff; }
+.btn-err:hover { background: #b91c1c; }
+.btn-sec { background: var(--g100); color: var(--g700); border: 1px solid var(--g200); }
+.btn-sec:hover { background: var(--g200); }
+.btn-out { background: #fff; border: 1px solid var(--p); color: var(--p); }
+.btn-out:hover { background: #eff6ff; }
+.btn-sm { padding: .25rem .625rem; font-size: .8125rem; }
+
+/* BADGES */
+.badge { display: inline-block; padding: .1875rem .625rem; border-radius: 9999px; font-size: .75rem; font-weight: 600; }
+.b-paid { background: #dcfce7; color: #15803d; }
+.b-partial { background: #fef3c7; color: #92400e; }
+.b-unpaid { background: #fee2e2; color: #b91c1c; }
+.b-gray { background: var(--g100); color: var(--g700); }
+.b-blue { background: #dbeafe; color: var(--pd); }
+.b-moved { background: #f3e8ff; color: #7e22ce; }
+.b-caretaker { background: #e0f2fe; color: #0369a1; }
+
+/* SECTION HEADER */
+.sec-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: .75rem; }
+.sec-title { font-size: 1.375rem; font-weight: 700; }
+
+/* PERIOD SELECTOR */
+.period-sel { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.period-sel select { width: auto; padding: .375rem .625rem; }
+
+/* FORMS */
+.fgrp { margin-bottom: 1rem; }
+label { display: block; font-size: .875rem; font-weight: 500; color: var(--g700); margin-bottom: .3rem; }
+input, select, textarea { width: 100%; padding: .5rem .75rem; border: 1px solid var(--g300); border-radius: 6px; font-size: .875rem; color: var(--g900); background: #fff; transition: border-color .15s; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+input[readonly] { background: var(--g50); color: var(--g500); cursor: not-allowed; }
+.frow { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; }
+.fcheck { display: flex; align-items: center; gap: .5rem; }
+.fcheck input { width: auto; cursor: pointer; }
+.fcheck label { margin: 0; cursor: pointer; }
+
+/* MODAL */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+.overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.modal-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.modal-title { font-size: 1.0625rem; font-weight: 600; }
+.modal-close { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--g500); padding: .25rem; line-height: 1; }
+.modal-ftr { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--g200); }
+
+/* TOAST */
+.toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--g900); color: #fff; padding: .75rem 1.25rem; border-radius: 8px; font-size: .875rem; z-index: 2000; opacity: 0; transform: translateY(.5rem); transition: all .3s; pointer-events: none; }
+.undo-toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(.5rem); background: var(--g900); color: #fff; padding: .625rem .75rem .625rem 1.25rem; border-radius: 8px; font-size: .875rem; z-index: 2001; display: flex; align-items: center; gap: .75rem; opacity: 0; transition: all .3s; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+.undo-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+.undo-toast button { background: #818cf8; color: #fff; border: none; border-radius: 6px; padding: .375rem .875rem; font-weight: 700; cursor: pointer; font-size: .8125rem; }
+
+/* SORTABLE TABLES */
+thead th:not(:empty) { cursor: pointer; user-select: none; }
+thead th:not(:empty):hover { background: var(--g100); }
+th .sort-arrow { font-size: .625rem; margin-left: .25rem; color: var(--p); }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.t-ok { background: var(--ok); }
+.toast.t-err { background: var(--err); }
+
+/* BILLING INPUTS */
+.bi { width: 90px !important; padding: .3rem .5rem; }
+.bi-lg { width: 110px !important; }
+
+/* OVERDUE ALERT */
+.overdue-card { background: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid var(--err); border-radius: var(--r); padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+.overdue-card .od-title { display: flex; align-items: center; gap: .5rem; font-weight: 700; color: #991b1b; font-size: .9375rem; margin-bottom: .75rem; }
+.overdue-card .od-count { background: var(--err); color: #fff; border-radius: 9999px; padding: .0625rem .5rem; font-size: .75rem; }
+.overdue-card td { border-bottom-color: #fecaca; }
+.overdue-card tr:hover td { background: #fee2e2; }
+.overdue-card th { background: transparent; border-bottom-color: #fecaca; color: #991b1b; }
+.od-days { font-weight: 700; color: var(--err); white-space: nowrap; }
+
+/* EMPTY STATE */
+.empty { text-align: center; padding: 3rem; color: var(--g500); }
+.empty .empty-icon { font-size: 2.5rem; margin-bottom: .5rem; }
+.empty p { font-size: .875rem; }
+
+/* PRINT */
+#print-area { display: none; }
+@media print {
+  body > *:not(#print-area) { display: none !important; }
+  #print-area { display: block !important; }
+  .bill-print { max-width: 100%; }
+  /* Bill sheet print mode */
+  body.printing-billsheet > *:not(main) { display: none !important; }
+  body.printing-billsheet #print-area { display: none !important; }
+  body.printing-billsheet main > section { display: none !important; }
+  body.printing-billsheet main > #tab-billsheet { display: block !important; }
+  body.printing-billsheet .sec-hdr { display: none !important; }
+  @page { size: landscape; margin: 1.5cm; }
+}
+.bill-print { font-family: Arial, sans-serif; max-width: 420px; margin: 0 auto; padding: 1.5rem; }
+.bill-print + .bill-print { page-break-before: always; }
+.bill-print .bp-head { text-align: center; border-bottom: 2px solid #333; padding-bottom: 1rem; margin-bottom: 1rem; }
+.bill-print .bp-head h2 { font-size: 1.25rem; }
+.bill-print .bp-head p { font-size: .875rem; color: #555; }
+.bill-print .bp-info { margin-bottom: 1rem; font-size: .875rem; }
+.bill-print .bp-info p { margin: .2rem 0; }
+.bill-print .bp-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.bill-print .bp-table td { padding: .3rem .2rem; font-size: .875rem; border-bottom: 1px solid #eee; }
+.bill-print .bp-table .amt { text-align: right; font-weight: 600; }
+.bill-print .bp-total { display: flex; justify-content: space-between; font-size: 1.0625rem; font-weight: 700; border-top: 2px solid #333; padding-top: .5rem; margin-top: .25rem; }
+.bill-print .bp-pay { margin-top: 1.5rem; font-size: .8125rem; color: #555; border-top: 1px dashed #ccc; padding-top: 1rem; }
+.bill-print .bp-footer { margin-top: 1.5rem; text-align: center; font-size: .75rem; color: #999; }
+
+/* RESPONSIVE */
+@media (max-width: 640px) { main { padding: 1rem; } header { padding: .75rem 1rem; } }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:#fff;border-radius:1rem;padding:2rem;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="font-size:2.5rem">🏠</div>
+      <h2 style="margin:.5rem 0 .25rem;color:#1e1b4b;font-size:1.375rem">Apartment Manager</h2>
+      <p style="color:#6b7280;font-size:.875rem;margin:0">Sign in to your account</p>
+    </div>
+    <div style="margin-bottom:1rem">
+      <label style="display:block;font-size:.875rem;font-weight:600;color:#374151;margin-bottom:.375rem">Email</label>
+      <input id="login-email" type="email" placeholder="you@email.com" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"
+        style="width:100%;padding:.625rem .875rem;border:1.5px solid #d1d5db;border-radius:.5rem;font-size:.9375rem;box-sizing:border-box;outline:none"
+        onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#d1d5db'">
+    </div>
+    <div style="margin-bottom:1.25rem">
+      <label style="display:block;font-size:.875rem;font-weight:600;color:#374151;margin-bottom:.375rem">Password</label>
+      <input id="login-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"
+        style="width:100%;padding:.625rem .875rem;border:1.5px solid #d1d5db;border-radius:.5rem;font-size:.9375rem;box-sizing:border-box;outline:none"
+        onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#d1d5db'">
+    </div>
+    <div id="login-err" style="color:#dc2626;font-size:.8125rem;margin-bottom:.75rem;min-height:1rem"></div>
+    <button onclick="doLogin()" style="width:100%;padding:.75rem;background:#4f46e5;color:#fff;border:none;border-radius:.5rem;font-size:1rem;font-weight:700;cursor:pointer;transition:background .2s"
+      onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+      Sign In
+    </button>
+    <p style="text-align:center;font-size:.75rem;color:#9ca3af;margin-top:1.25rem;margin-bottom:0">
+      Forgot password? Contact your admin or reset via Supabase dashboard.
+    </p>
+  </div>
+</div>
+
+<!-- APP ROOT -->
+<div id="app-root">
+
+<header>
+  <div>
+    <h1>🏠 Apartment Manager</h1>
+    <small id="hdr-period"></small>
+    <span id="sync-status" class="sync-badge" style="display:none"></span>
+  </div>
+  <div style="display:flex;gap:.5rem">
+    <button class="btn btn-sec btn-sm" onclick="showBackupModal()">💾 Backup</button>
+    <button class="btn btn-sec btn-sm" onclick="showSettingsModal()">⚙ Rates</button>
+    <button class="btn btn-sec btn-sm" onclick="doLogout()">🚪 Logout</button>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('dashboard', this)">📊 Dashboard</button>
+  <button onclick="showTab('rooms', this)">🏠 Rooms</button>
+  <button onclick="showTab('tenants', this)">👤 Tenants</button>
+  <button onclick="showTab('billing', this)">🧾 Billing</button>
+  <button onclick="showTab('payments', this)">💰 Payments</button>
+  <button onclick="showTab('expenses', this)">📋 Expenses</button>
+  <button onclick="showTab('mortgage', this)">🏦 Mortgage</button>
+  <button onclick="showTab('maintenance', this)">🔧 Maintenance</button>
+  <button onclick="showTab('billsheet', this)">🖨 Bill Sheet</button>
+  <button onclick="showTab('reports', this)">📈 Reports</button>
+</nav>
+
+<main>
+
+<!-- DASHBOARD -->
+<section id="tab-dashboard" class="active">
+  <div class="sec-hdr">
+    <div>
+      <div class="sec-title">Dashboard</div>
+      <div id="dash-lbl" style="color:var(--g500);font-size:.875rem"></div>
+    </div>
+    <div class="period-sel">
+      <select id="dash-m" onchange="renderDashboard()"></select>
+      <select id="dash-y" onchange="renderDashboard()"></select>
+    </div>
+  </div>
+  <div id="dash-notices"></div>
+  <div class="stats-grid" id="dash-stats"></div>
+  <div id="dash-overdue"></div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Room Status</span>
+    </div>
+    <div class="tbl-wrap">
+      <table id="tbl-dash-rooms">
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ROOMS -->
+<section id="tab-rooms">
+  <div class="sec-hdr">
+    <div class="sec-title">Rooms &amp; Tenants</div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn btn-sec" onclick="openImportModal()">📥 Import from Excel</button>
+      <button class="btn btn-sec" onclick="exportRoomsCSV()">📤 Export CSV</button>
+      <button class="btn btn-p" onclick="openRoomModal()">+ Add Room</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="tbl-wrap">
+      <table id="tbl-rooms">
+        <thead><tr><th>Room</th><th>Tenant</th><th>Persons</th><th>Rent</th><th>WiFi</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="rooms-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- TENANTS -->
+<section id="tab-tenants">
+  <div class="sec-hdr">
+    <div class="sec-title">Tenant Contact Sheet</div>
+    <div style="display:flex;gap:.5rem">
+      <button class="btn btn-sec" onclick="window.print()">🖨 Print Sheet</button>
+      <button class="btn btn-p" onclick="openRoomModal()">+ Add Tenant</button>
+    </div>
+  </div>
+  <div id="tenants-content"></div>
+</section>
+
+<!-- BILLING -->
+<section id="tab-billing">
+  <div class="sec-hdr">
+    <div>
+      <div class="sec-title">Monthly Billing</div>
+      <div style="font-size:.875rem;color:var(--g500)">Enter meter readings to compute bills</div>
+    </div>
+    <div class="period-sel">
+      <select id="bill-m" onchange="renderBilling()"></select>
+      <select id="bill-y" onchange="renderBilling()"></select>
+      <button class="btn btn-ok" onclick="openQuickEntry()">⚡ Quick Entry</button>
+      <button class="btn btn-out" onclick="printAllBills()">🖨 Print All</button>
+      <button class="btn btn-p" onclick="generateAllBills()">💾 Save All Bills</button>
+    </div>
+  </div>
+  <div id="billing-content"></div>
+</section>
+
+<!-- PAYMENTS -->
+<section id="tab-payments">
+  <div class="sec-hdr">
+    <div class="sec-title">Payments</div>
+    <button class="btn btn-p" onclick="openPaymentModal()">+ Record Payment</button>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Payment History</span>
+      <div class="period-sel" style="align-items:center;flex-wrap:wrap;gap:.5rem">
+        <input id="pay-search" oninput="renderPayments()" placeholder="🔍 Search tenant, room, notes…" style="padding:.375rem .625rem;border:1px solid var(--g300);border-radius:var(--r);font-size:.875rem;width:200px">
+        <select id="pay-m" onchange="renderPayments()"></select>
+        <select id="pay-y" onchange="renderPayments()"></select>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table id="tbl-payments">
+        <thead><tr><th>Date</th><th>Room</th><th>Tenant</th><th>Period</th><th>Amount</th><th>Mode</th><th>Notes</th><th></th></tr></thead>
+        <tbody id="pay-body"></tbody>
+      </table>
+    </div>
+    <div id="pay-total" style="text-align:right;padding:.75rem;font-weight:600;border-top:1px solid var(--g200)"></div>
+  </div>
+</section>
+
+<!-- EXPENSES -->
+<section id="tab-expenses">
+  <div class="sec-hdr">
+    <div class="sec-title">Expenses</div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap" id="exp-hdr-btns">
+      <button class="btn btn-sec" onclick="openExpenseImportModal()">📥 Import from Excel</button>
+      <button class="btn btn-p" onclick="openExpenseModal()">+ Add Expense</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Monthly Expenses</span>
+      <div class="period-sel">
+        <select id="exp-m" onchange="renderExpenses()"></select>
+        <select id="exp-y" onchange="renderExpenses()"></select>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table id="tbl-expenses">
+        <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th></th></tr></thead>
+        <tbody id="exp-body"></tbody>
+      </table>
+    </div>
+    <div id="exp-total" style="text-align:right;padding:.75rem;font-weight:600;border-top:1px solid var(--g200)"></div>
+  </div>
+</section>
+
+<!-- MORTGAGE -->
+<section id="tab-mortgage">
+  <div class="sec-hdr">
+    <div class="sec-title">Mortgage Payments</div>
+    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <select id="mort-m" onchange="renderMortgage()"></select>
+      <select id="mort-y" onchange="renderMortgage()"></select>
+      <button class="btn btn-p" onclick="openMortgageModal()">+ Record Mortgage Payment</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Mortgage Payment History</span>
+      <div class="period-sel" style="align-items:center">
+        <input id="mort-search" oninput="renderMortgage()" placeholder="🔍 Search notes…" style="padding:.375rem .625rem;border:1px solid var(--g300);border-radius:var(--r);font-size:.875rem;width:220px">
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table id="tbl-mortgage">
+        <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Notes</th><th></th></tr></thead>
+        <tbody id="mort-body"></tbody>
+      </table>
+    </div>
+    <div id="mort-total" style="text-align:right;padding:.75rem;font-weight:600;border-top:1px solid var(--g200)"></div>
+  </div>
+</section>
+
+<!-- MAINTENANCE -->
+<section id="tab-maintenance">
+  <div class="sec-hdr">
+    <div class="sec-title">🔧 Maintenance & Repairs</div>
+    <button class="btn btn-p" onclick="openMaintenanceModal()">+ Log Repair</button>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="stats-grid" id="maint-stats"></div>
+
+  <!-- Filters -->
+  <div class="card" style="margin-bottom:1rem">
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center">
+      <input id="maint-search" oninput="renderMaintenance()" placeholder="🔍 Search description, room…" style="padding:.375rem .625rem;border:1px solid var(--g300);border-radius:var(--r);font-size:.875rem;flex:1;min-width:160px">
+      <select id="maint-room-filter" onchange="renderMaintenance()" style="padding:.375rem .625rem;border:1px solid var(--g300);border-radius:var(--r);font-size:.875rem">
+        <option value="">All Rooms</option>
+      </select>
+      <select id="maint-status-filter" onchange="renderMaintenance()" style="padding:.375rem .625rem;border:1px solid var(--g300);border-radius:var(--r);font-size:.875rem">
+        <option value="">All Statuses</option>
+        <option value="open">Open</option>
+        <option value="in-progress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
+      <select id="maint-cat-filter" onchange="renderMaintenance()" style="padding:.375rem .625rem;border:1px solid var(--g300);border-radius:var(--r);font-size:.875rem">
+        <option value="">All Categories</option>
+        <option>Plumbing</option>
+        <option>Electrical</option>
+        <option>Structural</option>
+        <option>Appliance</option>
+        <option>Pest Control</option>
+        <option>Painting</option>
+        <option>Common Area</option>
+        <option>Other</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="tbl-wrap">
+      <table id="tbl-maintenance">
+        <thead><tr>
+          <th>Date</th><th>Room</th><th>Category</th><th>Description</th>
+          <th>Reported By</th><th>Status</th><th style="text-align:right">Cost</th><th></th>
+        </tr></thead>
+        <tbody id="maint-body"></tbody>
+      </table>
+    </div>
+    <div id="maint-total" style="text-align:right;padding:.75rem;font-weight:600;border-top:1px solid var(--g200)"></div>
+  </div>
+</section>
+
+<!-- BILL SHEET -->
+<section id="tab-billsheet">
+  <div class="sec-hdr">
+    <div>
+      <div class="sec-title">🖨 Monthly Bill Sheet</div>
+      <div style="font-size:.875rem;color:var(--g500)">Printable summary to give to your caretaker</div>
+    </div>
+    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <select id="bs-m" onchange="renderBillSheet()"></select>
+      <select id="bs-y" onchange="renderBillSheet()"></select>
+      <button class="btn btn-p" onclick="printBillSheet()">🖨 Print</button>
+    </div>
+  </div>
+  <div id="billsheet-content"></div>
+</section>
+
+<!-- REPORTS -->
+<section id="tab-reports">
+  <div class="sec-hdr">
+    <div class="sec-title">Monthly Report</div>
+    <div class="period-sel" style="align-items:center">
+      <button class="btn btn-sec btn-sm" id="rep-mode-btn" onclick="toggleReportMode()">📅 View Year Summary</button>
+      <select id="rep-m" onchange="renderReports()"></select>
+      <select id="rep-y" onchange="renderReports()"></select>
+    </div>
+  </div>
+  <div id="rep-content"></div>
+</section>
+
+</main>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal-box"></div>
+</div>
+
+<!-- PRINT AREA -->
+<div id="print-area"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ======================== CONSTANTS ========================
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const SHORT_M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const PAY_MODES = ['Cash','GCash','Maya','BPI','BDO','Metrobank','UnionBank','Bank Transfer','Check','Other'];
+const EXP_CATS = ['Maintenance','Electricity (Building)','Water (Building)','WiFi (Building)','Supplies','Repairs','Insurance','Tax','Cleaning','Caretaker Salary','Loan','Other'];
+// ============================================================
+//  CONFIGURATION — fill these in after creating your project
+// ============================================================
+const SUPABASE_URL = 'https://hvaxkpkplvvsmdyeptci.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2YXhrcGtwbHZ2c21keWVwdGNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODYyNjcsImV4cCI6MjA5Njg2MjI2N30.jkXC2kpGCKwiDsgkIvb6k_yAETrbEtuozwu2kOWP3yM';
+// ============================================================
+
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SORT_KEY = 'apt_sort_prefs';
+
+// ======================== AUTH ========================
+let _session = null;
+
+async function initAuth() {
+  const { data: { session } } = await _sb.auth.getSession();
+  _session = session;
+  _sb.auth.onAuthStateChange((_e, s) => { _session = s; });
+  if (!_session) { showLoginScreen(); return false; }
+  return true;
+}
+
+function showLoginScreen() {
+  document.getElementById('app-root').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+function hideLoginScreen() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-root').style.display = '';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-err');
+  errEl.textContent = '';
+  const { error } = await _sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { errEl.textContent = error.message; return; }
+  hideLoginScreen();
+  await loadDB();
+  renderAll();
+  init();
+}
+
+async function doLogout() {
+  await _sb.auth.signOut();
+  showLoginScreen();
+}
+
+// ======================== DATABASE ========================
+let db;
+
+// Map our flat db arrays to/from Supabase tables.
+// All rows carry a user_id = auth user's id so each user sees only their data.
+// Settings stored as a single row keyed by user_id.
+
+async function loadDB() {
+  const uid_user = _session.user.id;
+  db = newDB();
+
+  const [rooms, bills, payments, expenses, maintenance, mortgages, settings] = await Promise.all([
+    _sb.from('rooms').select('*').eq('user_id', uid_user),
+    _sb.from('bills').select('*').eq('user_id', uid_user),
+    _sb.from('payments').select('*').eq('user_id', uid_user),
+    _sb.from('expenses').select('*').eq('user_id', uid_user),
+    _sb.from('maintenance').select('*').eq('user_id', uid_user),
+    _sb.from('mortgages').select('*').eq('user_id', uid_user),
+    _sb.from('settings').select('*').eq('user_id', uid_user).maybeSingle(),
+  ]);
+
+  db.rooms       = rooms.data       || [];
+  db.bills       = bills.data       || [];
+  db.payments    = payments.data    || [];
+  db.expenses    = expenses.data    || [];
+  db.maintenance = maintenance.data || [];
+  // mortgages may be missing on older backups
+  db.mortgages   = (typeof mortgages !== 'undefined' && mortgages.data) ? mortgages.data : [];
+  db.settings    = settings.data    ? settings.data.config : newDB().settings;
+
+  migrateBillSnapshots();
+}
+
+// ============================================================
+//  PERSISTENCE LAYER — per-row writes + offline outbox
+// ============================================================
+// Each change writes ONLY the affected row(s), never the whole
+// database. This stops a stale device from clobbering newer data
+// or resurrecting a row another device just deleted. Writes that
+// fail (offline / DB down) are queued in an "outbox" and replayed
+// on reconnect — instead of dumping the entire db to localStorage.
+
+const OUTBOX_KEY = 'apt_outbox';
+const _conflictCol = t => (t === 'settings' ? 'user_id' : 'id');
+
+function loadOutbox() { try { return JSON.parse(localStorage.getItem(OUTBOX_KEY) || '[]'); } catch { return []; } }
+function writeOutbox(q) { try { localStorage.setItem(OUTBOX_KEY, JSON.stringify(q)); } catch (e) {} }
+function enqueue(op) { const q = loadOutbox(); q.push(op); writeOutbox(q); updateSyncStatus(); }
+
+function rowPayload(table, row) {
+  const user_id = _session.user.id;
+  return table === 'settings' ? { user_id, config: row } : { ...row, user_id };
+}
+
+// Upsert a single row now; queue it if the network/DB is unavailable.
+async function persistUpsert(table, row) {
+  const payload = rowPayload(table, row);
+  try {
+    const { error } = await _sb.from(table).upsert(payload, { onConflict: _conflictCol(table) });
+    if (error) throw error;
+    flushOutbox();
+    updateSyncStatus();
+  } catch (e) {
+    console.error('Upsert ' + table + ' failed — queued offline:', e);
+    enqueue({ type: 'upsert', table, payload });
+    toast('Saved offline — will sync when back online', 't-err');
+  }
+}
+
+// Delete a single row now; queue it if offline so the delete is durable.
+async function persistDelete(table, id) {
+  try {
+    const { error } = await _sb.from(table).delete().eq('id', id).eq('user_id', _session.user.id);
+    if (error) throw error;
+    flushOutbox();
+    updateSyncStatus();
+  } catch (e) {
+    console.error('Delete ' + table + ' failed — queued offline:', e);
+    enqueue({ type: 'delete', table, id });
+  }
+}
+
+// Replay queued operations in order; keep any that still fail for next time.
+let _flushing = false;
+async function flushOutbox() {
+  if (_flushing) return true;
+  const q = loadOutbox();
+  if (!q.length) return true;
+  _flushing = true;
+  const remaining = [];
+  for (const op of q) {
+    try {
+      if (op.type === 'upsert') {
+        const { error } = await _sb.from(op.table).upsert(op.payload, { onConflict: _conflictCol(op.table) });
+        if (error) throw error;
+      } else if (op.type === 'delete') {
+        const { error } = await _sb.from(op.table).delete().eq('id', op.id).eq('user_id', _session.user.id);
+        if (error) throw error;
+      }
+    } catch (e) { remaining.push(op); }
+  }
+  writeOutbox(remaining);
+  _flushing = false;
+  updateSyncStatus();
+  return remaining.length === 0;
+}
+
+// Push the whole in-memory db to the cloud as individual upserts.
+// Used by Restore and the one-time legacy-backup migration.
+async function bulkReplaceCloud() {
+  const groups = [
+    ['rooms', db.rooms], ['bills', db.bills], ['payments', db.payments],
+    ['expenses', db.expenses], ['maintenance', db.maintenance], ['mortgages', db.mortgages || []],
+  ];
+  for (const [table, rows] of groups) {
+    for (const row of rows) await persistUpsert(table, row);
+  }
+  await persistUpsert('settings', db.settings);
+}
+
+// Replace ALL cloud rows with the current in-memory db: first delete any
+// cloud rows the db no longer contains, then upsert everything. Used by
+// Restore so a restore truly REPLACES rather than merging into existing data.
+async function replaceCloudWithDb() {
+  const keep = {
+    rooms:       new Set(db.rooms.map(r => r.id)),
+    bills:       new Set(db.bills.map(r => r.id)),
+    payments:    new Set(db.payments.map(r => r.id)),
+    expenses:    new Set(db.expenses.map(r => r.id)),
+    maintenance: new Set(db.maintenance.map(r => r.id)),
+    mortgages:   new Set((db.mortgages || []).map(r => r.id)),
+  };
+  for (const t of Object.keys(keep)) {
+    const { data: existing, error } = await _sb.from(t).select('id').eq('user_id', _session.user.id);
+    if (error) throw error;
+    for (const row of (existing || [])) {
+      if (!keep[t].has(row.id)) {
+        const { error: delErr } = await _sb.from(t).delete().eq('id', row.id).eq('user_id', _session.user.id);
+        if (delErr) throw delErr;
+      }
+    }
+  }
+  await bulkReplaceCloud();
+}
+
+// Legacy name kept so any un-migrated caller degrades to a cheap
+// queue-flush instead of throwing. Real writes go through
+// persistUpsert / persistDelete in each mutator.
+async function saveWithFallback() { return flushOutbox(); }
+
+function prettyAge(timestamp) {
+  if (!timestamp) return '';
+  const diff = Date.now() - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `${days}d`;
+}
+
+function updateSyncStatus() {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  const n = loadOutbox().length;
+  if (!n) { el.style.display = 'none'; return; }
+  el.textContent = `${n} change${n > 1 ? 's' : ''} pending sync`;
+  el.className = 'sync-badge warn';
+  el.style.display = 'inline-flex';
+}
+
+// Try to push any queued offline changes to the cloud. Also performs a
+// one-time migration of any full-db backup left by an older app version.
+async function syncLocalBackup() {
+  const legacy = localStorage.getItem('apt_local_db');
+  if (legacy) {
+    try {
+      const data = JSON.parse(legacy);
+      if (confirm('Unsynced changes from an earlier version were found. Upload them to the cloud now?')) {
+        const prev = db;
+        db = data;
+        await bulkReplaceCloud();
+        db = prev;
+        toast('Older offline changes synced to cloud');
+      }
+    } catch (e) { console.error('Legacy backup migration failed:', e); }
+    localStorage.removeItem('apt_local_db');
+    localStorage.removeItem('apt_unsynced_at');
+  }
+  const drained = await flushOutbox();
+  if (drained && loadOutbox().length === 0) updateSyncStatus();
+}
+
+// Hard-delete a row from Supabase (alias kept for existing call sites).
+async function sbDelete(table, id) { return persistDelete(table, id); }
+
+function uid() { return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+// Permanently stamp tenant name + room number onto each bill so payment
+// history stays readable even if the room is later deleted.
+function migrateBillSnapshots() {
+  const changed = [];
+  db.bills.forEach(b => {
+    if (!b.tenantName || !b.roomNumber) {
+      const r = db.rooms.find(x => x.id === b.roomId);
+      if (r) {
+        b.tenantName = b.tenantName || r.tenant;
+        b.roomNumber = b.roomNumber || r.number;
+        changed.push(b);
+      }
+    }
+  });
+  changed.forEach(b => persistUpsert('bills', b));
+}
+
+// Get display info for a bill's room/tenant. The snapshot stored on the
+// bill takes priority, so past records always show the tenant who actually
+// lived there at the time — even if a new tenant now occupies the room or
+// the room was deleted. `past` is true when they're no longer the current
+// active occupant.
+function billRoomLabel(bill) {
+  const r = getRoom(bill.roomId);
+  const number = bill.roomNumber || (r ? r.number : '—');
+  const tenant = bill.tenantName || (r ? r.tenant : '—');
+  const past = !r || roomStatus(r) !== 'active' || (bill.tenantName && r.tenant !== bill.tenantName);
+  return { number, tenant, past };
+}
+
+function newDB() {
+  return {
+    rooms: [],
+    bills: [],
+    payments: [],
+    expenses: [],
+    maintenance: [],
+    mortgages: [],
+    settings: { electricity: 17, wifi: 300, water: 150, name: 'My Apartment', wifiSubscription: 0 }
+  };
+}
+
+
+const per = (y, m) => `${y}-${String(m + 1).padStart(2, '0')}`;
+function perLabel(p) { const [y, m] = p.split('-'); return `${MONTHS[+m - 1]} ${y}`; }
+function perParts(p) { const [y, m] = p.split('-'); return { y: +y, m: +m - 1 }; }
+
+function prevPer(p) {
+  const { y, m } = perParts(p);
+  return m === 0 ? per(y - 1, 11) : per(y, m - 1);
+}
+
+function fmt(n) {
+  return '₱' + Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ======================== HTML ESCAPING (XSS DEFENSE) ========================
+// All user-entered text (tenant names, notes, descriptions, contacts, etc.) is
+// rendered via innerHTML throughout this app. Without escaping, a value like
+// <img src=x onerror=alert(1)> would execute. esc() is for HTML text/content
+// context; escAttr() additionally neutralizes quotes for value="..." contexts.
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+// Attribute context: same as esc() (already handles both quote styles).
+function escAttr(s) { return esc(s); }
+
+// ======================== ROOMS ========================
+function saveRoom(data, id = null) {
+  let row;
+  if (id) {
+    const i = db.rooms.findIndex(r => r.id === id);
+    if (i >= 0) { db.rooms[i] = { ...db.rooms[i], ...data }; row = db.rooms[i]; }
+  } else {
+    row = { id: uid(), ...data };
+    db.rooms.push(row);
+  }
+  if (row) persistUpsert('rooms', row);
+}
+
+function deleteRoom(id) {
+  const r = getRoom(id);
+  const hasHistory = db.bills.some(b => b.roomId === id);
+  const msg = hasHistory
+    ? `Room ${r ? r.number : ''} has billing history. Past bills and payments will be KEPT and still show ${r ? r.tenant : 'the tenant'}'s name in your records.\n\nTip: if the tenant just moved out, press Cancel and use Edit → Status: Moved Out instead, to keep their full profile.\n\nDelete this room anyway?`
+    : 'Delete this room?';
+  if (!confirm(msg)) return;
+  const removed = getRoom(id);
+  db.rooms = db.rooms.filter(r => r.id !== id);
+  persistDelete('rooms', id);
+  renderRooms();
+  renderTenants();
+  offerUndo(`Room ${esc(removed.number)} (${esc(removed.tenant)}) deleted`, () => {
+    db.rooms.push(removed);
+    persistUpsert('rooms', removed);
+    renderRooms();
+    renderTenants();
+  }, 8);
+}
+
+function getRoom(id) { return db.rooms.find(r => r.id === id); }
+
+// Backwards-compatible status: old rooms used active:true/false
+function roomStatus(r) {
+  if (r.status) return r.status;
+  return r.active !== false ? 'active' : 'inactive';
+}
+function statusBadge(r) {
+  const s = roomStatus(r);
+  if (s === 'active')    return '<span class="badge b-paid">Active</span>';
+  if (s === 'moved-out') return '<span class="badge b-moved">Moved Out</span>';
+  return '<span class="badge b-gray">Inactive</span>';
+}
+
+// ======================== BILLS ========================
+function getBill(roomId, period) {
+  return db.bills.find(b => b.roomId === roomId && b.period === period);
+}
+
+function computeBill(roomId, period, prevR, currR, persons, wifiOverride) {
+  const room = getRoom(roomId);
+  if (!room) return null;
+  const s = db.settings;
+  const kWh = Math.max(0, (+currR || 0) - (+prevR || 0));
+  const electricity = Math.round(kWh * s.electricity);
+  const caretaker = isCaretaker(room);
+  const rent  = caretaker ? 0 : (+room.rent || 0);
+  const water = caretaker ? 0 : Math.round((+persons || 1) * s.water);
+  const wifi  = caretaker ? 0 : (wifiOverride !== undefined ? (wifiOverride ? s.wifi : 0) : (room.wifi ? s.wifi : 0));
+  const prevBill    = getBill(roomId, prevPer(period));
+  const prevBalance = prevBill ? prevBill.balance : 0;
+  const totalDue    = rent + electricity + water + wifi + prevBalance;
+  const existing    = getBill(roomId, period);
+  const paidAmount  = existing ? existing.paidAmount : 0;
+  const balance     = totalDue - paidAmount;
+  return { roomId, period, rent, prevReading: +prevR || 0, currReading: +currR || 0, kWh, electricity, persons: +persons || 1, water, wifi, prevBalance, totalDue, paidAmount, balance, status: balance <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid' };
+}
+
+function saveBill(billData) {
+  const existing = getBill(billData.roomId, billData.period);
+  const room = getRoom(billData.roomId);
+  const snap = room ? { tenantName: room.tenant, roomNumber: room.number } : {};
+  let row;
+  if (existing) {
+    Object.assign(existing, billData, snap);
+    row = existing;
+  } else {
+    row = { id: uid(), ...billData, ...snap, createdAt: Date.now() };
+    db.bills.push(row);
+  }
+  persistUpsert('bills', row);
+}
+
+function recalcBill(billId) {
+  const bill = db.bills.find(b => b.id === billId);
+  if (!bill) return;
+  const pays = db.payments.filter(p => p.billId === billId);
+  bill.paidAmount = pays.reduce((s, p) => s + (+p.amount || 0), 0);
+  bill.balance = bill.totalDue - bill.paidAmount;
+  bill.status = bill.balance <= 0 ? 'paid' : bill.paidAmount > 0 ? 'partial' : 'unpaid';
+  persistUpsert('bills', bill);
+}
+
+function resetBill(roomId, period) {
+  const bill = getBill(roomId, period);
+  if (!bill) return;
+  const hasPay = db.payments.some(p => p.billId === bill.id);
+  if (hasPay && !confirm('This bill has payments recorded. Reset anyway? Payments will NOT be deleted.')) return;
+  if (!hasPay && !confirm('Clear this bill so you can re-enter the readings?')) return;
+  const billId = bill.id;
+  db.bills = db.bills.filter(b => !(b.roomId === roomId && b.period === period));
+  persistDelete('bills', billId);
+  renderBilling();
+  toast('Bill cleared — enter new readings');
+}
+
+// ======================== PAYMENTS ========================
+function addPayment(data) {
+  const p = { id: uid(), ...data, createdAt: Date.now() };
+  db.payments.push(p);
+  persistUpsert('payments', p);
+  recalcBill(data.billId); // persists the affected bill
+  return p;
+}
+
+function deletePayment(id) {
+  const p = db.payments.find(x => x.id === id);
+  if (!p) return;
+  db.payments = db.payments.filter(x => x.id !== id);
+  persistDelete('payments', id);
+  recalcBill(p.billId); // persists the affected bill
+  renderPayments();
+  renderDashboard();
+  offerUndo(`Payment of ${fmt(p.amount)} deleted`, () => {
+    db.payments.push(p);
+    persistUpsert('payments', p);
+    recalcBill(p.billId);
+    renderPayments();
+    renderDashboard();
+  });
+}
+
+// ======================== EXPENSES ========================
+function addExpense(data, id = null) {
+  let row;
+  if (id) {
+    const i = db.expenses.findIndex(e => e.id === id);
+    if (i >= 0) { db.expenses[i] = { ...db.expenses[i], ...data }; row = db.expenses[i]; }
+  } else {
+    row = { id: uid(), ...data };
+    db.expenses.push(row);
+  }
+  if (row) persistUpsert('expenses', row);
+}
+
+function deleteExpense(id) {
+  const e = db.expenses.find(x => x.id === id);
+  if (!e) return;
+  db.expenses = db.expenses.filter(x => x.id !== id);
+  persistDelete('expenses', id);
+  renderExpenses();
+  offerUndo(`Expense "${esc(e.description)}" deleted`, () => {
+    db.expenses.push(e);
+    persistUpsert('expenses', e);
+    renderExpenses();
+  });
+}
+
+function getExpenses(period) {
+  const { y, m } = perParts(period);
+  return db.expenses.filter(e => {
+    const d = new Date(e.date + 'T00:00:00');
+    return d.getFullYear() === y && d.getMonth() === m;
+  });
+}
+
+// ======================== PERIOD SELECTORS ========================
+function fillPeriodSels(mId, yId, onChange) {
+  const mSel = document.getElementById(mId);
+  const ySel = document.getElementById(yId);
+  const now = new Date();
+  mSel.innerHTML = MONTHS.map((n, i) => `<option value="${i}">${n}</option>`).join('');
+  const startY = 2026;
+  ySel.innerHTML = '';
+  for (let y = startY; y <= now.getFullYear() + 1; y++) {
+    ySel.innerHTML += `<option value="${y}">${y}</option>`;
+  }
+  mSel.value = now.getMonth();
+  ySel.value = now.getFullYear();
+}
+
+function getPer(mId, yId) {
+  return per(+document.getElementById(yId).value, +document.getElementById(mId).value);
+}
+
+// ======================== TABS ========================
+function showTab(name, btn) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  const renders = { dashboard: renderDashboard, rooms: renderRooms, tenants: renderTenants, billing: renderBilling, payments: renderPayments, expenses: renderExpenses, maintenance: renderMaintenance, billsheet: renderBillSheet, reports: renderReports };
+  if (renders[name]) renders[name]();
+}
+
+// ======================== OVERDUE REMINDERS ========================
+// Due date = 5th of the month after the billing period (same rule as printed bills).
+// A bill is flagged once it's unpaid 7+ days past that due date.
+function billDueDate(period) {
+  const { y, m } = perParts(period);
+  return new Date(y, m + 1, 5);
+}
+
+// Returns formatted due-date info for a bill: date label, days late, and a colored badge
+function dueDateInfo(bill) {
+  const due = billDueDate(bill.period);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const daysLate = Math.floor((today - due) / 86400000);
+  const dateLabel = due.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+  let badge;
+  if (bill.balance <= 0) {
+    badge = `<span style="color:var(--g500)">📅 Due: ${dateLabel}</span>`;
+  } else if (daysLate >= 7) {
+    badge = `<span style="color:var(--err);font-weight:700">📅 Due: ${dateLabel} — ${daysLate} days late ⚠️</span>`;
+  } else if (daysLate > 0) {
+    badge = `<span style="color:var(--warn);font-weight:600">📅 Due: ${dateLabel} — ${daysLate} day${daysLate > 1 ? 's' : ''} late</span>`;
+  } else if (daysLate === 0) {
+    badge = `<span style="color:var(--warn);font-weight:600">📅 Due today (${dateLabel})</span>`;
+  } else {
+    badge = `<span style="color:var(--g500)">📅 Due: ${dateLabel} (in ${-daysLate} day${daysLate < -1 ? 's' : ''})</span>`;
+  }
+  return { due, daysLate, dateLabel, badge };
+}
+
+function getOverdueBills(minDays = 7) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return db.bills
+    .filter(b => b.balance > 0)
+    .map(b => {
+      const due = billDueDate(b.period);
+      const daysLate = Math.floor((today - due) / 86400000);
+      return { bill: b, room: getRoom(b.roomId), due, daysLate };
+    })
+    .filter(x => x.room && roomStatus(x.room) === 'active' && x.daysLate >= minDays)
+    .sort((a, b) => b.daysLate - a.daysLate);
+}
+
+function renderOverdueAlerts() {
+  const el = document.getElementById('dash-overdue');
+  if (!el) return;
+  const overdue = getOverdueBills(7);
+  if (!overdue.length) { el.innerHTML = ''; return; }
+
+  const totalOverdue = overdue.reduce((s, x) => s + x.bill.balance, 0);
+  el.innerHTML = `
+    <div class="overdue-card">
+      <div class="od-title">
+        ⚠️ Overdue Payments — 7+ Days Late
+        <span class="od-count">${overdue.length}</span>
+        <button class="btn btn-out btn-sm" style="margin-left:.5rem" onclick="copyAllReminders()">📋 Copy All Reminders</button>
+        <span style="margin-left:auto;font-size:.8125rem;font-weight:600">Total: ${fmt(totalOverdue)}</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Room</th><th>Tenant</th><th>Bill Month</th><th>Due Date</th><th>Days Late</th><th style="text-align:right">Balance</th><th></th></tr></thead>
+          <tbody>
+            ${overdue.map(({ bill, room, due, daysLate }) => `
+              <tr>
+                <td><strong>${room.number}</strong></td>
+                <td>${room.tenant}</td>
+                <td>${perLabel(bill.period)}</td>
+                <td>${due.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                <td class="od-days">${daysLate} days</td>
+                <td style="text-align:right;font-weight:700;color:var(--err)">${fmt(bill.balance)}</td>
+                <td style="white-space:nowrap">
+                  <button class="btn btn-ok btn-sm" onclick="openPaymentModal('${bill.id}')">💰 Pay</button>
+                  <button class="btn btn-out btn-sm" onclick="copyReminder('${bill.id}')" title="Copy a polite reminder message to send">📋 Remind</button>
+                  ${room.phone ? `<a class="btn btn-out btn-sm" href="sms:${room.phone}">💬</a>` : ''}
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function buildReminderMsg(bill) {
+  const who = billRoomLabel(bill);
+  const dd = dueDateInfo(bill);
+  const firstName = (who.tenant || '').split(' ')[0];
+  return `Hi ${firstName}, gentle reminder from ${db.settings.name}: your ${perLabel(bill.period)} bill of ${fmt(bill.balance)} for Room ${who.number} was due last ${dd.dateLabel}. Kindly settle at your earliest convenience. You may pay via Cash, GCash, Maya, or Bank Transfer. Thank you!`;
+}
+
+// ======================== DASHBOARD NOTICES ========================
+function renderNotices() {
+  const el = document.getElementById('dash-notices');
+  if (!el) return;
+  const notices = [];
+  const today = new Date();
+
+  // Open maintenance issues
+  const openIssues = db.maintenance.filter(m => m.status !== 'done');
+  const overdueIssues = openIssues.filter(m => m.date && (Date.now() - new Date(m.date + 'T00:00:00')) > 7 * 86400000);
+  if (openIssues.length) {
+    notices.push(`
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-left:4px solid var(--warn);border-radius:var(--r);padding:.75rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;font-size:.875rem">
+        <span>🔧 <strong>${openIssues.length} open repair issue${openIssues.length > 1 ? 's' : ''}</strong>${overdueIssues.length ? ` — <span style="color:var(--err);font-weight:700">${overdueIssues.length} overdue 7+ days</span>` : ''}</span>
+        <button class="btn btn-out btn-sm" style="margin-left:auto" onclick="showTab('maintenance', document.querySelector('nav button:nth-child(7)'))">View Maintenance</button>
+      </div>`);
+  }
+  const checkMonth = (y, m, label, urgent) => {
+    const p = `${y}-${String(m + 1).padStart(2, '0')}`;
+    const monthEnd = new Date(y, m + 1, 0);
+    const missing = db.rooms.filter(r => {
+      if (roomStatus(r) !== 'active') return false;
+      if (r.moveIn && new Date(r.moveIn + 'T00:00:00') > monthEnd) return false;
+      return !getBill(r.id, p);
+    });
+    if (!missing.length) return;
+    notices.push(`
+      <div style="background:${urgent ? '#fef2f2' : '#eff6ff'};border:1px solid ${urgent ? '#fecaca' : '#bfdbfe'};border-left:4px solid ${urgent ? 'var(--err)' : 'var(--p)'};border-radius:var(--r);padding:.75rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;font-size:.875rem">
+        <span>🧾 No <strong>${label}</strong> bill yet for Room ${missing.map(r => r.number).join(', ')}.</span>
+        <button class="btn ${urgent ? 'btn-err' : 'btn-p'} btn-sm" style="margin-left:auto" onclick="goGenerateBill()">Go to Billing</button>
+      </div>`);
+  };
+  const prevM = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  checkMonth(prevM.getFullYear(), prevM.getMonth(), perLabel(`${prevM.getFullYear()}-${String(prevM.getMonth() + 1).padStart(2, '0')}`), true);
+  if (today.getDate() >= 25) {
+    checkMonth(today.getFullYear(), today.getMonth(), perLabel(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`), false);
+  }
+
+  el.innerHTML = notices.join('');
+}
+
+function copyReminder(billId) {
+  const bill = db.bills.find(b => b.id === billId);
+  if (!bill) return;
+  copyText(buildReminderMsg(bill), 'Reminder copied — paste it into your message app');
+}
+
+function copyAllReminders() {
+  const overdue = getOverdueBills(7);
+  if (!overdue.length) { toast('No overdue tenants right now 🎉'); return; }
+  const text = overdue.map(({ bill, room }) => {
+    const header = `── Room ${room.number} · ${room.tenant}${room.phone ? ' · ' + room.phone : ''} ──`;
+    return header + '\n' + buildReminderMsg(bill);
+  }).join('\n\n');
+  copyText(text, `${overdue.length} reminder(s) copied — paste and send one by one`);
+}
+
+function copyText(text, doneMsg) {
+  const done = () => toast(doneMsg);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); done(); }
+  catch { prompt('Copy this message:', text); }
+  document.body.removeChild(ta);
+}
+
+// ======================== DASHBOARD ========================
+function renderDashboard() {
+  const p = getPer('dash-m', 'dash-y');
+  document.getElementById('dash-lbl').textContent = perLabel(p);
+  renderNotices();
+  renderOverdueAlerts();
+
+  const bills = db.bills.filter(b => b.period === p);
+  const totalDue = bills.reduce((s, b) => s + b.totalDue, 0);
+  const totalBal = bills.reduce((s, b) => s + b.balance, 0);
+  const exps = getExpenses(p);
+  const totalExp = exps.reduce((s, e) => s + (+e.amount || 0), 0);
+  // Collected = only actual recorded payments for this period's bills
+  const billIds = new Set(bills.map(b => b.id));
+  const totalCollected = db.payments
+    .filter(x => billIds.has(x.billId))
+    .reduce((s, x) => s + (+x.amount || 0), 0);
+  const net = totalCollected - totalExp;
+
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat stat-blue"><div class="stat-val">${fmt(totalDue)}</div><div class="stat-label">Total Billed</div></div>
+    <div class="stat stat-green"><div class="stat-val">${fmt(totalCollected)}</div><div class="stat-label">Total Collected</div></div>
+    <div class="stat stat-red"><div class="stat-val">${fmt(totalBal)}</div><div class="stat-label">Outstanding Balance</div></div>
+    <div class="stat stat-orange"><div class="stat-val">${fmt(totalExp)}</div><div class="stat-label">Total Expenses</div></div>
+    <div class="stat ${net >= 0 ? 'stat-green' : 'stat-red'}"><div class="stat-val">${fmt(net)}</div><div class="stat-label">Net Income</div></div>
+    <div class="stat stat-blue"><div class="stat-val">${bills.length}/${db.rooms.filter(r => roomStatus(r) === 'active').length}</div><div class="stat-label">Bills Generated</div></div>
+  `;
+
+  const tbody = document.getElementById('dash-rooms');
+  // Active rooms always show; moved-out/inactive rooms still show for months
+  // where they have a saved bill, so past tenants' records remain visible.
+  const rooms = db.rooms.filter(r => roomStatus(r) === 'active' || getBill(r.id, p));
+  if (!rooms.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">🏠</div><p>No rooms yet. Add rooms first.</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rooms.map(r => {
+    const b = getBill(r.id, p);
+    const isPast = roomStatus(r) !== 'active';
+    if (!b) return `<tr><td>${esc(r.number)}</td><td>${esc(r.tenant)}</td><td colspan="4" style="color:var(--g500)">No bill generated</td><td><button class="btn btn-p btn-sm" onclick="goGenerateBill('${r.id}')">Generate</button></td></tr>`;
+    const who = billRoomLabel(b);
+    return `<tr>
+      <td><strong>${esc(who.number)}</strong></td>
+      <td>${esc(who.tenant)}${isPast ? ' <span class="badge b-moved">Moved Out</span>' : ''}</td>
+      <td>${fmt(b.totalDue)}</td>
+      <td>${fmt(b.paidAmount)}</td>
+      <td><strong>${fmt(b.balance)}</strong></td>
+      <td><span class="badge b-${b.status}">${b.status}</span></td>
+      <td>
+        <button class="btn btn-out btn-sm" onclick="printBill('${b.id}')">🖨 Bill</button>
+        ${b.balance > 0 ? `<button class="btn btn-ok btn-sm" onclick="openPaymentModal('${b.id}')">💰 Pay</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+  restoreSort('tbl-dash-rooms');
+}
+
+function goGenerateBill(roomId) {
+  // Navigate to billing tab and set focus
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('nav button')[2].classList.add('active');
+  showTab('billing', document.querySelectorAll('nav button')[2]);
+}
+
+// ======================== ROOMS RENDER ========================
+function renderRooms() {
+  const tbody = document.getElementById('rooms-body');
+  if (!db.rooms.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">🏠</div><p>No rooms added yet.</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = db.rooms.map(r => `
+    <tr>
+      <td><strong>${esc(r.number)}</strong></td>
+      <td>${esc(r.tenant)}${isCaretaker(r) ? ' <span class="badge b-caretaker">⚙ Caretaker</span>' : ''}</td>
+      <td>${r.persons}</td>
+      <td>${fmt(r.rent)}</td>
+      <td>${r.wifi ? '<span class="badge b-blue">Yes ₱300</span>' : '<span class="badge b-gray">No</span>'}</td>
+      <td>${statusBadge(r)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sec btn-sm" onclick="openRoomModal('${r.id}')">Edit</button>
+        ${roomStatus(r) === 'active' ? `<button class="btn btn-out btn-sm" onclick="openSettlementModal('${r.id}')" title="Compute deposit refund and mark moved out">📤 Settle</button>` : ''}
+        <button class="btn btn-err btn-sm" onclick="deleteRoom('${r.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+  restoreSort('tbl-rooms');
+}
+
+// ======================== TENANTS RENDER ========================
+function renderTenants() {
+  const container = document.getElementById('tenants-content');
+  const active   = db.rooms.filter(r => roomStatus(r) === 'active');
+  const inactive = db.rooms.filter(r => roomStatus(r) === 'inactive');
+  const movedOut = db.rooms.filter(r => roomStatus(r) === 'moved-out');
+
+  if (!db.rooms.length) {
+    container.innerHTML = `<div class="card"><div class="empty"><div class="empty-icon">👤</div><p>No tenants yet. Add rooms first.</p></div></div>`;
+    return;
+  }
+
+  function card(r) {
+    const totalDeposit = (+r.deposit || 0) + (+r.advance || 0);
+    const moveInFmt  = r.moveIn  ? new Date(r.moveIn  + 'T00:00:00').toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+    const moveOutFmt = r.moveOut ? new Date(r.moveOut + 'T00:00:00').toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+    const depositDateFmt = r.depositDate ? new Date(r.depositDate + 'T00:00:00').toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+    const isMoved = roomStatus(r) === 'moved-out';
+
+    return `
+    <div class="card" style="border-left:4px solid ${isMoved ? '#7e22ce' : 'var(--p)'}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem">
+        <div>
+          <div style="font-size:1.125rem;font-weight:700">${esc(r.tenant)}</div>
+          <div style="color:var(--g500);font-size:.875rem">Room ${esc(r.number)} &nbsp;·&nbsp; ${r.persons} person${r.persons > 1 ? 's' : ''} &nbsp;·&nbsp; ${fmt(r.rent)}/mo</div>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          ${statusBadge(r)}
+          <button class="btn btn-out btn-sm" onclick="printStatement('${r.id}')">📄 Statement</button>
+          ${(() => { const cnt = db.maintenance.filter(m => m.roomId === r.id).length; return cnt ? `<span class="badge b-gray" title="Repair history">🔧 ${cnt} repair${cnt > 1 ? 's' : ''}</span>` : ''; })()}
+          <button class="btn btn-sec btn-sm" onclick="openRoomModal('${r.id}')">✏ Edit</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem">
+
+        <!-- Contact -->
+        <div style="background:var(--g50);border-radius:var(--r);padding:.875rem;border:1px solid var(--g200)">
+          <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g500);margin-bottom:.625rem">📞 Contact</div>
+          <div style="font-size:.875rem;line-height:2">
+            <div>${r.phone ? `<a href="tel:${escAttr(r.phone)}" style="color:var(--p)">${esc(r.phone)}</a>` : '<span style="color:var(--g400)">No phone</span>'}</div>
+            <div>${r.email ? `<a href="mailto:${escAttr(r.email)}" style="color:var(--p)">${esc(r.email)}</a>` : '<span style="color:var(--g400)">No email</span>'}</div>
+            ${r.idType ? `<div style="color:var(--g500)">ID: ${esc(r.idType)}</div>` : ''}
+          </div>
+        </div>
+
+        <!-- Move-in & Deposit -->
+        <div style="background:var(--g50);border-radius:var(--r);padding:.875rem;border:1px solid var(--g200)">
+          <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g500);margin-bottom:.625rem">📅 Move-in & Deposit</div>
+          <div style="font-size:.875rem;line-height:2">
+            <div><span style="color:var(--g500)">Move-in:</span> <strong>${moveInFmt}</strong></div>
+            ${isMoved ? `<div><span style="color:#7e22ce">Move-out:</span> <strong>${moveOutFmt}</strong></div>` : ''}
+            <div><span style="color:var(--g500)">Security Deposit:</span> <strong>${r.deposit ? fmt(r.deposit) : '—'}</strong></div>
+            <div><span style="color:var(--g500)">Advance Rent:</span> <strong>${r.advance ? fmt(r.advance) : '—'}</strong></div>
+            ${totalDeposit > 0 ? `<div><span style="color:var(--g500)">Total Paid:</span> <strong style="color:var(--ok)">${fmt(totalDeposit)}</strong></div>` : ''}
+            ${r.depositDate ? `<div><span style="color:var(--g500)">Date Paid:</span> ${depositDateFmt}</div>` : ''}
+            ${r.depositNotes ? `<div style="color:var(--g500);font-size:.8125rem">${esc(r.depositNotes)}</div>` : ''}
+          </div>
+        </div>
+
+        <!-- Emergency Contact -->
+        <div style="background:var(--g50);border-radius:var(--r);padding:.875rem;border:1px solid var(--g200)">
+          <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g500);margin-bottom:.625rem">🚨 Emergency Contact</div>
+          ${r.ecName ? `
+          <div style="font-size:.875rem;line-height:2">
+            <div><strong>${esc(r.ecName)}</strong>${r.ecRel ? ` <span style="color:var(--g500)">(${esc(r.ecRel)})</span>` : ''}</div>
+            <div>${r.ecPhone ? `<a href="tel:${escAttr(r.ecPhone)}" style="color:var(--p)">${esc(r.ecPhone)}</a>` : '<span style="color:var(--g400)">No number</span>'}</div>
+          </div>` : '<div style="color:var(--g400);font-size:.875rem">Not provided</div>'}
+          ${r.notes ? `<div style="margin-top:.5rem;font-size:.8125rem;color:var(--g500);border-top:1px solid var(--g200);padding-top:.5rem">${esc(r.notes)}</div>` : ''}
+        </div>
+
+      </div>
+    </div>`;
+  }
+
+  const grpLabel = (text, count, color = 'var(--g500)') =>
+    `<div style="font-size:.8125rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:${color};margin:1.25rem 0 .75rem">${text} (${count})</div>`;
+
+  let html = '';
+  if (active.length) {
+    html += grpLabel('Active Tenants', active.length, 'var(--ok)');
+    html += active.map(card).join('');
+  }
+  if (inactive.length) {
+    html += grpLabel('Inactive', inactive.length);
+    html += inactive.map(card).join('');
+  }
+  if (movedOut.length) {
+    html += grpLabel('Moved Out', movedOut.length, '#7e22ce');
+    html += movedOut.map(card).join('');
+  }
+  container.innerHTML = html;
+}
+
+// ======================== BILLING RENDER ========================
+function renderBilling() {
+  const p = getPer('bill-m', 'bill-y');
+  // Active rooms always show; moved-out or inactive rooms still show for
+  // months where they have a saved bill, so past records are never hidden.
+  const rooms = db.rooms.filter(r => roomStatus(r) === 'active' || getBill(r.id, p));
+  const content = document.getElementById('billing-content');
+
+  if (!rooms.length) {
+    content.innerHTML = `<div class="card"><div class="empty"><div class="empty-icon">🏠</div><p>Add rooms first before generating bills.</p></div></div>`;
+    return;
+  }
+
+  let rows = '';
+  rooms.forEach(r => {
+    const existing = getBill(r.id, p);
+    const prevBill = getBill(r.id, prevPer(p));
+    // Always derive prevReading from last month's bill; treat currReading of 0 as not-yet-entered
+    const prevFromBill = prevBill && prevBill.currReading > 0 ? prevBill.currReading : null;
+    const prevReading = prevFromBill !== null ? prevFromBill : (existing ? existing.prevReading || '' : '');
+    const prevMissing = !prevFromBill && prevBill; // prevBill exists but had 0 currReading = was saved blank
+    const currReading = existing && existing.currReading > 0 ? existing.currReading : '';
+    const persons = existing ? existing.persons : r.persons;
+    const wifiCheck = existing ? (existing.wifi > 0) : r.wifi;
+    const kWh = existing ? existing.kWh : 0;
+    const prevBal = prevBill ? prevBill.balance : 0;
+
+    rows += `
+    <div class="card" id="bill-room-${r.id}">
+      <div class="card-header">
+        <div>
+          <strong>Room ${existing ? billRoomLabel(existing).number : r.number}</strong> &nbsp;
+          <span style="color:var(--g500)">${existing ? billRoomLabel(existing).tenant : r.tenant}</span>
+          ${roomStatus(r) !== 'active' ? '<span class="badge b-moved" style="margin-left:.5rem">Moved Out</span>' : ''}
+          ${isCaretaker(r) ? '<span class="badge b-caretaker" style="margin-left:.5rem">⚙ Caretaker</span>' : ''}
+          ${existing ? `<span class="badge b-${existing.status}" style="margin-left:.5rem">${existing.status}</span>` : '<span class="badge b-gray" style="margin-left:.5rem">Not Generated</span>'}
+          ${existing ? `<div style="font-size:.8125rem;margin-top:.25rem">${dueDateInfo(existing).badge}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+          ${existing ? `<button class="btn btn-out btn-sm" onclick="printBill('${existing.id}')">🖨 Print Bill</button>` : ''}
+          ${existing && existing.balance > 0 ? `<button class="btn btn-ok btn-sm" onclick="openPaymentModal('${existing.id}')">💰 Record Payment</button>` : ''}
+          ${existing ? `<button class="btn btn-sec btn-sm" onclick="resetBill('${r.id}','${p}')" title="Clear this bill and re-enter readings">🔄 Reset</button>` : ''}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem">
+        <!-- Electricity -->
+        <div style="background:var(--g50);border-radius:var(--r);padding:1rem;border:1px solid var(--g200)">
+          <div style="font-weight:600;margin-bottom:.75rem;font-size:.875rem">⚡ Electricity (₱${db.settings.electricity}/kWh)</div>
+          <div class="fgrp">
+            <label>Previous Reading</label>
+            <input type="number" class="bi-lg" id="prev-${r.id}" value="${prevReading}" placeholder="Enter reading" oninput="updateBillRow('${r.id}')" style="width:100%">
+            ${!prevBill && !existing ? '<div style="font-size:.75rem;color:var(--warn);margin-top:.25rem">⚠ No prior bill — enter manually</div>' : ''}
+            ${prevMissing ? '<div style="font-size:.75rem;color:var(--err);margin-top:.25rem">⚠ Previous month\'s reading was saved blank — reset &amp; re-save it</div>' : ''}
+          </div>
+          <div class="fgrp">
+            <label>Current Reading</label>
+            <input type="number" class="bi-lg" id="curr-${r.id}" value="${currReading}" placeholder="Enter reading" oninput="updateBillRow('${r.id}')" style="width:100%">
+            <div id="meterwarn-${r.id}" style="font-size:.75rem;color:var(--err);margin-top:.25rem"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.875rem;margin-top:.5rem">
+            <span>kWh Used: <strong id="kwh-${r.id}">${kWh}</strong></span>
+            <span>Amount: <strong id="elec-amt-${r.id}">${fmt(existing ? existing.electricity : 0)}</strong></span>
+          </div>
+        </div>
+        <!-- Water & WiFi — hidden for caretaker -->
+        ${isCaretaker(r) ? `
+        <div style="background:#e0f2fe;border-radius:var(--r);padding:1rem;border:1px solid #bae6fd;display:flex;align-items:center;gap:.5rem;font-size:.875rem;color:#0369a1">
+          <span style="font-size:1.25rem">⚙</span>
+          <span><strong>Caretaker room</strong> — electricity only. No rent, water, or WiFi charges.</span>
+        </div>` : `
+        <div style="background:var(--g50);border-radius:var(--r);padding:1rem;border:1px solid var(--g200)">
+          <div style="font-weight:600;margin-bottom:.75rem;font-size:.875rem">💧 Water (₱${db.settings.water}/person) &amp; 📶 WiFi</div>
+          <div class="fgrp">
+            <label>No. of Persons</label>
+            <input type="number" id="persons-${r.id}" value="${persons}" min="1" oninput="updateBillRow('${r.id}')" style="width:100%">
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.875rem;margin-bottom:.75rem">
+            <span>Water Amount: <strong id="water-amt-${r.id}">${fmt(existing ? existing.water : +persons * db.settings.water)}</strong></span>
+          </div>
+          <div class="fcheck">
+            <input type="checkbox" id="wifi-${r.id}" ${wifiCheck ? 'checked' : ''} onchange="updateBillRow('${r.id}')">
+            <label for="wifi-${r.id}">WiFi Availed — ₱${db.settings.wifi}</label>
+          </div>
+          <div style="font-size:.875rem;margin-top:.5rem">
+            WiFi Amount: <strong id="wifi-amt-${r.id}">${fmt(wifiCheck ? db.settings.wifi : 0)}</strong>
+          </div>
+        </div>`}
+        <!-- Summary -->
+        <div style="background:#eff6ff;border-radius:var(--r);padding:1rem;border:1px solid #bfdbfe">
+          <div style="font-weight:600;margin-bottom:.75rem;font-size:.875rem">🧾 Bill Summary</div>
+          <table style="width:100%;font-size:.875rem">
+            ${isCaretaker(r) ? '' : `<tr><td>Rent</td><td style="text-align:right">${fmt(r.rent)}</td></tr>`}
+            <tr><td>Electricity</td><td style="text-align:right" id="s-elec-${r.id}">${fmt(existing ? existing.electricity : 0)}</td></tr>
+            ${isCaretaker(r) ? '' : `
+            <tr><td>Water</td><td style="text-align:right" id="s-water-${r.id}">${fmt(existing ? existing.water : +persons * db.settings.water)}</td></tr>
+            <tr><td>WiFi</td><td style="text-align:right" id="s-wifi-${r.id}">${fmt(wifiCheck ? db.settings.wifi : 0)}</td></tr>`}
+            <tr><td>Previous Balance</td><td style="text-align:right" style="color:var(--err)">${fmt(prevBal)}</td></tr>
+            <tr style="font-weight:700;border-top:2px solid #93c5fd">
+              <td style="padding-top:.375rem">TOTAL DUE</td>
+              <td style="text-align:right;color:var(--p);font-size:1rem;padding-top:.375rem" id="s-total-${r.id}">${fmt(existing ? existing.totalDue : (isCaretaker(r) ? 0 : +r.rent + +persons * db.settings.water + (wifiCheck ? db.settings.wifi : 0)) + prevBal)}</td>
+            </tr>
+          </table>
+          <button class="btn btn-p btn-sm" style="width:100%;margin-top:.75rem;justify-content:center" onclick="saveSingleBill('${r.id}')">
+            💾 Save Bill
+          </button>
+          ${existing ? `<div style="font-size:.75rem;color:var(--g500);text-align:center;margin-top:.375rem">Paid: ${fmt(existing.paidAmount)} | Balance: ${fmt(existing.balance)}</div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  });
+
+  content.innerHTML = rows;
+}
+
+function updateBillRow(roomId) {
+  const room = getRoom(roomId);
+  const caretaker = isCaretaker(room);
+  const prev = +document.getElementById('prev-' + roomId).value || 0;
+  const curr = +document.getElementById('curr-' + roomId).value || 0;
+  const persons = caretaker ? 1 : (+document.getElementById('persons-' + roomId).value || 1);
+  const wifi = caretaker ? false : document.getElementById('wifi-' + roomId).checked;
+
+  const kWh = Math.max(0, curr - prev);
+  const warnEl = document.getElementById('meterwarn-' + roomId);
+  if (warnEl) {
+    if (curr > 0 && curr < prev) {
+      warnEl.textContent = `⚠ Current reading (${curr}) is LOWER than previous (${prev}) — double-check for a typo`;
+    } else if (curr > 0 && kWh > 1000) {
+      warnEl.textContent = `⚠ ${kWh} kWh is unusually high — double-check the reading`;
+    } else {
+      warnEl.textContent = '';
+    }
+  }
+  const electricity = Math.round(kWh * db.settings.electricity);
+  const water = caretaker ? 0 : Math.round(persons * db.settings.water);
+  const wifiAmt = caretaker ? 0 : (wifi ? db.settings.wifi : 0);
+  const prevBill = getBill(roomId, prevPer(getPer('bill-m', 'bill-y')));
+  const prevBal = prevBill ? prevBill.balance : 0;
+  const total = (caretaker ? 0 : +room.rent) + electricity + water + wifiAmt + prevBal;
+
+  document.getElementById('kwh-' + roomId).textContent = kWh;
+  document.getElementById('elec-amt-' + roomId).textContent = fmt(electricity);
+  if (!caretaker) {
+    document.getElementById('water-amt-' + roomId).textContent = fmt(water);
+    document.getElementById('wifi-amt-' + roomId).textContent = fmt(wifiAmt);
+    document.getElementById('s-water-' + roomId).textContent = fmt(water);
+    document.getElementById('s-wifi-' + roomId).textContent = fmt(wifiAmt);
+  }
+  document.getElementById('s-elec-' + roomId).textContent = fmt(electricity);
+  document.getElementById('s-total-' + roomId).textContent = fmt(total);
+}
+
+function saveSingleBill(roomId) {
+  const p = getPer('bill-m', 'bill-y');
+  const caretaker = isCaretaker(getRoom(roomId));
+  const prev = +document.getElementById('prev-' + roomId).value || 0;
+  const curr = +document.getElementById('curr-' + roomId).value;
+  if (!curr && curr !== 0) { toast('Enter the current meter reading first', 't-err'); return; }
+  if (+curr < prev) { toast('Current reading cannot be less than previous reading', 't-err'); return; }
+  const persons = caretaker ? 1 : (+document.getElementById('persons-' + roomId).value || 1);
+  const wifi = caretaker ? false : document.getElementById('wifi-' + roomId).checked;
+  const billData = computeBill(roomId, p, prev, curr, persons, wifi);
+  saveBill(billData);
+  renderBilling();
+  renderDashboard();
+  toast(`Bill saved for Room ${getRoom(roomId).number}`);
+}
+
+function generateAllBills() {
+  const p = getPer('bill-m', 'bill-y');
+  const rooms = db.rooms.filter(r => roomStatus(r) === 'active');
+  let saved = 0;
+  const skipped = [];
+  rooms.forEach(r => {
+    const curr = +document.getElementById('curr-' + r.id).value;
+    if (!curr) return;
+    const prev = +document.getElementById('prev-' + r.id).value || 0;
+    if (curr < prev) { skipped.push(r.number); return; }
+    const persons = +document.getElementById('persons-' + r.id).value || r.persons;
+    const wifi = document.getElementById('wifi-' + r.id).checked;
+    saveBill(computeBill(r.id, p, prev, curr, persons, wifi));
+    saved++;
+  });
+  if (skipped.length) toast(`Skipped Room ${skipped.join(', ')} — current reading lower than previous`, 't-err');
+  if (!saved) { if (!skipped.length) toast('Enter at least one current meter reading', 't-err'); return; }
+  renderBilling();
+  renderDashboard();
+  toast(`${saved} bill(s) saved for ${perLabel(p)}`);
+}
+
+// ======================== PAYMENTS RENDER ========================
+function renderPayments() {
+  const p = getPer('pay-m', 'pay-y');
+  const { y, m } = perParts(p);
+  const qEl = document.getElementById('pay-search');
+  const q = qEl ? qEl.value.trim().toLowerCase() : '';
+
+  let pays;
+  if (q) {
+    // Searching looks across ALL months so old records are easy to find
+    pays = db.payments.filter(x => {
+      const bill = db.bills.find(b => b.id === x.billId);
+      const who = bill ? billRoomLabel(bill) : { number: '', tenant: '' };
+      const hay = [who.tenant, who.number, x.mode, x.notes, x.date, bill ? perLabel(bill.period) : '']
+        .join(' ').toLowerCase();
+      return hay.includes(q);
+    }).sort((a, b) => b.createdAt - a.createdAt);
+  } else {
+    pays = db.payments.filter(x => {
+      const d = new Date(x.date + 'T00:00:00');
+      return d.getFullYear() === y && d.getMonth() === m;
+    }).sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  const total = pays.reduce((s, x) => s + (+x.amount || 0), 0);
+  document.getElementById('pay-total').textContent = q
+    ? `${pays.length} result(s) across all months — Total: ${fmt(total)}`
+    : `Total Collected: ${fmt(total)}`;
+
+  const tbody = document.getElementById('pay-body');
+  if (!pays.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">💰</div><p>${q ? 'No payments match your search' : 'No payments recorded for ' + perLabel(p)}</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = pays.map(x => {
+    const bill = db.bills.find(b => b.id === x.billId);
+    const who = bill ? billRoomLabel(bill) : { number: '—', tenant: '—' };
+    return `<tr>
+      <td>${x.date}</td>
+      <td>${esc(who.number)}</td>
+      <td>${esc(who.tenant)}${who.past ? ' <span style="color:#7e22ce;font-size:.75rem">(moved out)</span>' : ''}</td>
+      <td>${bill ? perLabel(bill.period) : '—'}</td>
+      <td><strong>${fmt(x.amount)}</strong></td>
+      <td><span class="badge b-blue">${esc(x.mode)}</span></td>
+      <td style="color:var(--g500);font-size:.8125rem">${esc(x.notes || '')}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-out btn-sm" onclick="printReceipt('${x.id}')" title="Print receipt">🧾</button>
+        <button class="btn btn-err btn-sm" onclick="deletePayment('${x.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+  restoreSort('tbl-payments');
+}
+
+// ======================== EXPENSES RENDER ========================
+function quickAddWifi() {
+  const p = getPer('exp-m', 'exp-y');
+  const { y, m } = perParts(p);
+  const today = new Date().toISOString().slice(0, 10);
+  // Check if WiFi expense already exists this month
+  const already = getExpenses(p).find(e => e.category === 'WiFi (Building)');
+  if (already) {
+    if (!confirm(`A WiFi (Building) expense of ${fmt(already.amount)} is already logged for ${perLabel(p)}. Add another?`)) return;
+  }
+  addExpense({
+    date: today,
+    amount: db.settings.wifiSubscription,
+    description: 'WiFi Subscription',
+    category: 'WiFi (Building)'
+  });
+  renderExpenses();
+  toast(`WiFi bill of ${fmt(db.settings.wifiSubscription)} added`);
+}
+
+function renderExpenses() {
+  const p = getPer('exp-m', 'exp-y');
+  // Inject WiFi quick-add button if subscription amount is set
+  const hdrBtns = document.getElementById('exp-hdr-btns');
+  if (hdrBtns && db.settings.wifiSubscription > 0) {
+    if (!document.getElementById('wifi-quickadd-btn')) {
+      const btn = document.createElement('button');
+      btn.id = 'wifi-quickadd-btn';
+      btn.className = 'btn btn-sec';
+      btn.textContent = '📶 Add WiFi Bill (' + fmt(db.settings.wifiSubscription) + ')';
+      btn.onclick = quickAddWifi;
+      hdrBtns.prepend(btn);
+    }
+  }
+  const exps = getExpenses(p).sort((a, b) => new Date(b.date) - new Date(a.date));
+  const total = exps.reduce((s, e) => s + (+e.amount || 0), 0);
+  document.getElementById('exp-total').textContent = `Total Expenses: ${fmt(total)}`;
+
+  const tbody = document.getElementById('exp-body');
+  if (!exps.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">📋</div><p>No expenses for ${perLabel(p)}</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = exps.map(e => `<tr>
+    <td>${e.date}</td>
+    <td>${esc(e.description)}</td>
+    <td><span class="badge b-gray">${esc(e.category)}</span></td>
+    <td><strong>${fmt(e.amount)}</strong></td>
+    <td>
+      <button class="btn btn-sec btn-sm" onclick="openExpenseModal('${e.id}')">Edit</button>
+      <button class="btn btn-err btn-sm" onclick="deleteExpense('${e.id}')">✕</button>
+    </td>
+  </tr>`).join('');
+  restoreSort('tbl-expenses');
+}
+
+// ======================== MORTGAGE PAYMENTS ========================
+function addMortgagePayment(data) {
+  const row = { id: uid(), ...data, createdAt: Date.now() };
+  db.mortgages.push(row);
+  persistUpsert('mortgages', row);
+}
+
+function deleteMortgagePayment(id) {
+  const m = db.mortgages.find(x => x.id === id);
+  if (!m) return;
+  if (!confirm('Delete mortgage payment of ' + fmt(m.amount) + '?')) return;
+  db.mortgages = db.mortgages.filter(x => x.id !== id);
+  persistDelete('mortgages', id);
+  renderMortgage();
+  offerUndo(`Mortgage payment ${fmt(m.amount)} deleted`, () => {
+    db.mortgages.push(m);
+    persistUpsert('mortgages', m);
+    renderMortgage();
+  });
+}
+
+function renderMortgage() {
+  const p = getPer('mort-m', 'mort-y');
+  const { y, m } = perParts(p);
+  const q = (document.getElementById('mort-search') || {}).value?.trim().toLowerCase() || '';
+  const rows = db.mortgages.filter(r => {
+    const d = r.date ? new Date(r.date + 'T00:00:00') : null;
+    if (!d) return false;
+    if (q) return (r.notes || '').toLowerCase().includes(q) || (r.type || '').toLowerCase().includes(q);
+    return d.getFullYear() === y && d.getMonth() === m;
+  }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  const total = rows.reduce((s, r) => s + (+r.amount || 0), 0);
+  document.getElementById('mort-total').textContent = `Total Mortgage Payments: ${fmt(total)}`;
+  const tbody = document.getElementById('mort-body');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">🏦</div><p>No mortgage payments for ${perLabel(p)}</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td>${r.date}</td>
+    <td>${esc(r.type || 'Payment')}</td>
+    <td><strong>${fmt(r.amount)}</strong></td>
+    <td style="color:var(--g500);font-size:.8125rem">${esc(r.notes || '')}</td>
+    <td style="white-space:nowrap"><button class="btn btn-err btn-sm" onclick="deleteMortgagePayment('${r.id}')">✕</button></td>
+  </tr>`).join('');
+  restoreSort('tbl-mortgage');
+}
+
+function openMortgageModal() {
+  const today = new Date().toISOString().slice(0, 10);
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">Record Mortgage Payment</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="frow">
+      <div class="fgrp"><label>Date</label><input type="date" id="mort-date" value="${today}"></div>
+      <div class="fgrp"><label>Amount (₱)</label><input type="number" id="mort-amt" placeholder="0.00"></div>
+    </div>
+    <div class="fgrp"><label>Type</label>
+      <select id="mort-type"><option>Principal</option><option>Interest</option><option>Fees</option><option>Other</option></select>
+    </div>
+    <div class="fgrp"><label>Notes</label><input id="mort-notes" placeholder="Optional notes"></div>
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="submitMortgage()">Save</button>
+    </div>
+  `);
+}
+
+function submitMortgage() {
+  const date = document.getElementById('mort-date').value;
+  const amount = +document.getElementById('mort-amt').value;
+  const type = document.getElementById('mort-type').value;
+  const notes = document.getElementById('mort-notes').value.trim();
+  if (!date || !amount || amount <= 0) { toast('Enter valid date and amount', 't-err'); return; }
+  addMortgagePayment({ date, amount, type, notes });
+  closeModal();
+  renderMortgage();
+  toast('Mortgage payment recorded');
+}
+
+// ======================== REPORTS RENDER ========================
+// ======================== OCCUPANCY / VACANCY ========================
+// A room NUMBER counts as occupied in a given month if any tenancy record for
+// that number has a bill that month, or its move-in/move-out dates overlap it.
+function getOccupancy(p) {
+  const { y, m } = perParts(p);
+  const monthStart = new Date(y, m, 1);
+  const monthEnd = new Date(y, m + 1, 0);
+
+  const numbers = [...new Set(db.rooms.map(r => String(r.number)))];
+  const occupied = new Set();
+
+  db.rooms.forEach(r => {
+    const num = String(r.number);
+    if (occupied.has(num)) return;
+    // Strongest evidence: a bill exists for this record this month
+    if (getBill(r.id, p)) { occupied.add(num); return; }
+    const s = roomStatus(r);
+    if (s === 'inactive') return;
+    const mi = r.moveIn ? new Date(r.moveIn + 'T00:00:00') : null;
+    const mo = r.moveOut ? new Date(r.moveOut + 'T00:00:00') : null;
+    const startsBeforeEnd = !mi || mi <= monthEnd;
+    const endsAfterStart = !mo || mo >= monthStart;
+    if (s === 'active' && startsBeforeEnd && endsAfterStart) { occupied.add(num); return; }
+    if (s === 'moved-out' && mo && startsBeforeEnd && endsAfterStart) { occupied.add(num); }
+  });
+
+  // Last-known rent per vacant number, for estimating lost income
+  const lastRent = num => {
+    const recs = db.rooms.filter(r => String(r.number) === num)
+      .sort((a, b) => (b.moveOut || b.moveIn || '').localeCompare(a.moveOut || a.moveIn || ''));
+    return recs.length ? +recs[0].rent || 0 : 0;
+  };
+
+  const vacant = numbers.filter(n => !occupied.has(n))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .map(n => ({ number: n, rent: lastRent(n) }));
+  const lostRent = vacant.reduce((s, v) => s + v.rent, 0);
+  const rate = numbers.length ? Math.round((occupied.size / numbers.length) * 100) : 0;
+
+  return { total: numbers.length, occupiedCount: occupied.size, vacant, lostRent, rate };
+}
+
+let repMode = 'month';
+function toggleReportMode() {
+  repMode = repMode === 'month' ? 'year' : 'month';
+  const btn = document.getElementById('rep-mode-btn');
+  const mSel = document.getElementById('rep-m');
+  btn.textContent = repMode === 'year' ? '📅 View Monthly' : '📅 View Year Summary';
+  mSel.style.display = repMode === 'year' ? 'none' : '';
+  renderReports();
+}
+
+function renderYearReport() {
+  const y = +document.getElementById('rep-y').value;
+  let tBilled = 0, tCollected = 0, tExp = 0;
+  const rows = MONTHS.map((name, m) => {
+    const p = `${y}-${String(m + 1).padStart(2, '0')}`;
+    const bills = db.bills.filter(b => b.period === p);
+    const billIds = new Set(bills.map(b => b.id));
+    const billed = bills.reduce((s, b) => s + (+b.totalDue || 0), 0);
+    const collected = db.payments.filter(x => billIds.has(x.billId)).reduce((s, x) => s + (+x.amount || 0), 0);
+    const exp = db.expenses.filter(e => {
+      const d = new Date(e.date + 'T00:00:00');
+      return d.getFullYear() === y && d.getMonth() === m;
+    }).reduce((s, e) => s + (+e.amount || 0), 0);
+    tBilled += billed; tCollected += collected; tExp += exp;
+    const net = collected - exp;
+    if (!billed && !collected && !exp) return '';
+    return `<tr>
+      <td>${name}</td>
+      <td style="text-align:right">${fmt(billed)}</td>
+      <td style="text-align:right;color:var(--ok)">${fmt(collected)}</td>
+      <td style="text-align:right;color:var(--err)">${fmt(exp)}</td>
+      <td style="text-align:right;font-weight:700;color:${net >= 0 ? 'var(--ok)' : 'var(--err)'}">${fmt(net)}</td>
+    </tr>`;
+  }).join('');
+  const tNet = tCollected - tExp;
+
+  document.getElementById('rep-content').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat stat-blue"><div class="stat-val">${fmt(tBilled)}</div><div class="stat-label">Billed in ${y}</div></div>
+      <div class="stat stat-green"><div class="stat-val">${fmt(tCollected)}</div><div class="stat-label">Collected in ${y}</div></div>
+      <div class="stat stat-orange"><div class="stat-val">${fmt(tExp)}</div><div class="stat-label">Expenses in ${y}</div></div>
+      <div class="stat ${tNet >= 0 ? 'stat-green' : 'stat-red'}"><div class="stat-val">${fmt(tNet)}</div><div class="stat-label">Net Income ${y}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">📅 ${y} Month-by-Month</span></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Month</th><th style="text-align:right">Billed</th><th style="text-align:right">Collected</th><th style="text-align:right">Expenses</th><th style="text-align:right">Net</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:var(--g500)">No data for this year</td></tr>'}</tbody>
+          <tfoot><tr style="font-weight:700;border-top:2px solid var(--g300)">
+            <td>TOTAL</td>
+            <td style="text-align:right">${fmt(tBilled)}</td>
+            <td style="text-align:right">${fmt(tCollected)}</td>
+            <td style="text-align:right">${fmt(tExp)}</td>
+            <td style="text-align:right;color:${tNet >= 0 ? 'var(--ok)' : 'var(--err)'}">${fmt(tNet)}</td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderReports() {
+  if (repMode === 'year') { renderYearReport(); return; }
+  const p = getPer('rep-m', 'rep-y');
+  const occ = getOccupancy(p);
+  const bills = db.bills.filter(b => b.period === p);
+  const billIds = new Set(bills.map(b => b.id));
+  const pays = db.payments.filter(x => billIds.has(x.billId));
+  const exps = getExpenses(p);
+
+  const totalRent = bills.reduce((s, b) => s + b.rent, 0);
+  const totalElec = bills.reduce((s, b) => s + b.electricity, 0);
+  const totalWater = bills.reduce((s, b) => s + b.water, 0);
+  const totalWifi = bills.reduce((s, b) => s + b.wifi, 0);
+  const totalBilled = bills.reduce((s, b) => s + b.totalDue, 0);
+  const totalCollected = pays.reduce((s, p) => s + (+p.amount || 0), 0);
+  const totalExp = exps.reduce((s, e) => s + (+e.amount || 0), 0);
+  const net = totalCollected - totalExp;
+
+  const byMode = {};
+  pays.forEach(p => { byMode[p.mode] = (byMode[p.mode] || 0) + (+p.amount || 0); });
+
+  const byExpCat = {};
+  exps.forEach(e => { byExpCat[e.category] = (byExpCat[e.category] || 0) + (+e.amount || 0); });
+
+  const sortedCats = Object.entries(byExpCat).sort((a, b) => b[1] - a[1]);
+  const maxCat = sortedCats.length ? sortedCats[0][1] : 1;
+
+  document.getElementById('rep-content').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat stat-blue"><div class="stat-val">${fmt(totalBilled)}</div><div class="stat-label">Total Billed</div></div>
+      <div class="stat stat-green"><div class="stat-val">${fmt(totalCollected)}</div><div class="stat-label">Total Collected</div></div>
+      <div class="stat stat-red"><div class="stat-val">${fmt(totalBilled - totalCollected)}</div><div class="stat-label">Uncollected</div></div>
+      <div class="stat stat-orange"><div class="stat-val">${fmt(totalExp)}</div><div class="stat-label">Total Expenses</div></div>
+      <div class="stat ${net >= 0 ? 'stat-green' : 'stat-red'}"><div class="stat-val">${fmt(net)}</div><div class="stat-label">Net Income</div></div>
+      <div class="stat ${occ.vacant.length ? 'stat-red' : 'stat-green'}"><div class="stat-val">${occ.occupiedCount}/${occ.total}</div><div class="stat-label">Rooms Occupied (${occ.rate}%)</div></div>
+    </div>
+
+    <!-- OCCUPANCY & VACANCY -->
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-header">
+        <span class="card-title">🏠 Occupancy — ${perLabel(p)}</span>
+        ${occ.vacant.length ? `<span style="font-size:.875rem;color:var(--err)">Est. rent lost to vacancy: <strong>${fmt(occ.lostRent)}</strong></span>` : ''}
+      </div>
+      ${occ.vacant.length ? `
+      <div style="font-size:.875rem;margin-bottom:.5rem;color:var(--g500)">
+        ${occ.vacant.length} vacant room${occ.vacant.length > 1 ? 's' : ''} this month. With full occupancy, income would have been roughly <strong style="color:var(--g700)">${fmt(net + occ.lostRent)}</strong> instead of ${fmt(net)}.
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Vacant Room</th><th style="text-align:right">Last Known Rent</th><th style="text-align:right">Est. Lost Income</th></tr></thead>
+          <tbody>
+            ${occ.vacant.map(v => `<tr><td><strong>Room ${v.number}</strong></td><td style="text-align:right">${v.rent ? fmt(v.rent) : '—'}</td><td style="text-align:right;color:var(--err)">${v.rent ? fmt(v.rent) : '—'}</td></tr>`).join('')}
+          </tbody>
+          <tfoot><tr style="font-weight:700;border-top:2px solid var(--g300)"><td>Total Vacancy Loss</td><td></td><td style="text-align:right;color:var(--err)">${fmt(occ.lostRent)}</td></tr></tfoot>
+        </table>
+      </div>` : `<div style="font-size:.875rem;color:var(--ok)">✅ All ${occ.total} rooms occupied this month — no income lost to vacancy.</div>`}
+    </div>
+
+    <!-- EXPENSES BY CATEGORY — full width -->
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-header">
+        <span class="card-title">📊 Expenses by Category — ${perLabel(p)}</span>
+        <span style="font-size:.875rem;color:var(--g500)">Total: <strong>${fmt(totalExp)}</strong></span>
+      </div>
+      ${sortedCats.length ? `
+      <table style="width:100%">
+        <thead><tr><th>Category</th><th style="width:40%;display:none" class="hide-sm"></th><th style="text-align:right">Amount</th><th style="text-align:right">%</th></tr></thead>
+        <tbody>
+          ${sortedCats.map(([cat, amt]) => {
+            const pct = totalExp > 0 ? ((amt / totalExp) * 100).toFixed(1) : 0;
+            const barW = totalExp > 0 ? ((amt / totalExp) * 100).toFixed(1) : 0;
+            return `<tr>
+              <td style="white-space:nowrap"><strong>${cat}</strong></td>
+              <td style="padding:0 1rem">
+                <div style="background:var(--g200);border-radius:9999px;height:8px;overflow:hidden">
+                  <div style="background:var(--p);width:${barW}%;height:100%;border-radius:9999px;transition:width .3s"></div>
+                </div>
+              </td>
+              <td style="text-align:right;white-space:nowrap">${fmt(amt)}</td>
+              <td style="text-align:right;color:var(--g500);white-space:nowrap">${pct}%</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+        <tfoot>
+          <tr style="font-weight:700;border-top:2px solid var(--g200)">
+            <td colspan="2">Total Expenses</td>
+            <td style="text-align:right">${fmt(totalExp)}</td>
+            <td style="text-align:right;color:var(--g500)">100%</td>
+          </tr>
+        </tfoot>
+      </table>` : '<div class="empty" style="padding:1.5rem"><div class="empty-icon">📋</div><p>No expenses recorded for ${perLabel(p)}</p></div>'}
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem">
+      <div class="card">
+        <div class="card-header"><span class="card-title">📋 Bill Breakdown</span></div>
+        <table>
+          <tr><td>Rent</td><td style="text-align:right">${fmt(totalRent)}</td></tr>
+          <tr><td>Electricity</td><td style="text-align:right">${fmt(totalElec)}</td></tr>
+          <tr><td>Water</td><td style="text-align:right">${fmt(totalWater)}</td></tr>
+          <tr><td>WiFi</td><td style="text-align:right">${fmt(totalWifi)}</td></tr>
+          <tr style="font-weight:700;border-top:2px solid var(--g200)"><td>Total Billed</td><td style="text-align:right">${fmt(totalBilled)}</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">💰 Payments by Mode</span></div>
+        ${Object.keys(byMode).length ? `<table>${Object.entries(byMode).map(([k,v]) => `<tr><td>${k}</td><td style="text-align:right">${fmt(v)}</td></tr>`).join('')}<tr style="font-weight:700;border-top:2px solid var(--g200)"><td>Total</td><td style="text-align:right">${fmt(totalCollected)}</td></tr></table>` : '<div class="empty" style="padding:1.5rem"><p>No payments recorded</p></div>'}
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">🏠 Per Room Summary</span></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Room</th><th>Tenant</th><th>Billed</th><th>Paid</th><th>Balance</th></tr></thead>
+            <tbody>
+              ${bills.length ? bills.map(b => {
+                const who = billRoomLabel(b);
+                return `<tr><td>${esc(who.number)}</td><td>${esc(who.tenant)}</td><td>${fmt(b.totalDue)}</td><td>${fmt(b.paidAmount)}</td><td><strong>${fmt(b.balance)}</strong></td></tr>`;
+              }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--g500)">No bills</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      ${(() => {
+        const { y, m } = perParts(p);
+        const monthMaint = db.maintenance.filter(rec => {
+          const d = rec.date ? new Date(rec.date + 'T00:00:00') : null;
+          return d && d.getFullYear() === y && d.getMonth() === m;
+        });
+        if (!monthMaint.length) return '';
+        const maintCost = monthMaint.reduce((s, r) => s + (+r.cost || 0), 0);
+        return `<div class="card">
+          <div class="card-header"><span class="card-title">🔧 Repairs This Month</span><span style="font-size:.875rem;font-weight:600;color:var(--err)">${fmt(maintCost)}</span></div>
+          <table>
+            <thead><tr><th>Room</th><th>Description</th><th>Status</th><th style="text-align:right">Cost</th></tr></thead>
+            <tbody>
+              ${monthMaint.map(rec => {
+                const r2 = rec.roomId ? getRoom(rec.roomId) : null;
+                const st = MAINT_STATUS[rec.status] || MAINT_STATUS.open;
+                return `<tr><td>${r2 ? 'Rm ' + esc(r2.number) : 'Common'}</td><td style="font-size:.8125rem">${esc(rec.description)}</td><td><span class="badge ${st.cls}" style="font-size:.7rem">${st.label}</span></td><td style="text-align:right">${rec.cost > 0 ? fmt(rec.cost) : '—'}</td></tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>`;
+      })()}
+    </div>
+  `;
+}
+
+// ======================== MODALS ========================
+function openModal(html) {
+  document.getElementById('modal-box').innerHTML = html;
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('overlay')) closeModal();
+}
+
+// ROOM MODAL
+function openRoomModal(id = null) {
+  const r = id ? getRoom(id) : null;
+  const v = (field, fallback = '') => r ? (r[field] !== undefined ? r[field] : fallback) : fallback;
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">${r ? 'Edit Tenant / Room' : 'Add Tenant & Room'}</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p);margin-bottom:.75rem">🏠 Room Info</div>
+    <div class="frow">
+      <div class="fgrp"><label>Room Number</label><input id="rm-num" value="${escAttr(v('number'))}" placeholder="e.g. 101"></div>
+      <div class="fgrp"><label>Monthly Rent (₱)</label><input id="rm-rent" type="number" min="0" value="${v('rent')}"></div>
+    </div>
+    <div class="frow">
+      <div class="fgrp">
+        <label>Room Type</label>
+        <select id="rm-type" onchange="toggleCaretakerFields()">
+          <option value="regular"   ${v('type','regular') === 'regular'   ? 'selected' : ''}>Regular Tenant</option>
+          <option value="caretaker" ${v('type','regular') === 'caretaker' ? 'selected' : ''}>Caretaker (electricity only)</option>
+        </select>
+      </div>
+      <div class="fgrp" id="rm-wifi-row" style="display:flex;align-items:center;gap:.5rem;padding-top:1.6rem">
+        <input type="checkbox" id="rm-wifi" ${v('wifi') ? 'checked' : ''}>
+        <label for="rm-wifi" style="margin:0;cursor:pointer">WiFi Availed (₱${db.settings.wifi}/mo)</label>
+      </div>
+    </div>
+      <div class="fgrp">
+        <label>Status</label>
+        <select id="rm-status">
+          <option value="active"    ${(!r || roomStatus(r)==='active')    ? 'selected':''}>Active</option>
+          <option value="inactive"  ${(r && roomStatus(r)==='inactive')   ? 'selected':''}>Inactive</option>
+          <option value="moved-out" ${(r && roomStatus(r)==='moved-out')  ? 'selected':''}>Moved Out</option>
+        </select>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--g200);margin:.75rem 0">
+    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p);margin-bottom:.75rem">👤 Tenant Info</div>
+    <div class="frow">
+      <div class="fgrp"><label>Full Name</label><input id="rm-tenant" value="${escAttr(v('tenant'))}" placeholder="Full name"></div>
+      <div class="fgrp"><label>No. of Persons</label><input id="rm-persons" type="number" min="1" value="${v('persons', 1)}"></div>
+    </div>
+    <div class="frow">
+      <div class="fgrp"><label>Mobile Number</label><input id="rm-phone" value="${escAttr(v('phone'))}" placeholder="09XX XXX XXXX"></div>
+      <div class="fgrp"><label>Email (optional)</label><input id="rm-email" type="email" value="${escAttr(v('email'))}" placeholder="email@example.com"></div>
+    </div>
+    <div class="frow">
+      <div class="fgrp"><label>Move-in Date</label><input id="rm-movein" type="date" value="${v('moveIn')}"></div>
+      <div class="fgrp"><label>Move-out Date</label><input id="rm-moveout" type="date" value="${v('moveOut')}"></div>
+    </div>
+    <div class="frow">
+      <div class="fgrp"><label>Valid ID Type</label>
+        <select id="rm-idtype">
+          ${['','PhilSys / National ID','Driver\'s License','Passport','SSS ID','GSIS ID','Postal ID','Voter\'s ID','PRC ID','Other'].map(opt => `<option value="${opt}" ${v('idType') === opt ? 'selected' : ''}>${opt || '— Select ID —'}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--g200);margin:.75rem 0">
+    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p);margin-bottom:.75rem">💵 Deposit & Advance</div>
+    <div class="frow">
+      <div class="fgrp"><label>Security Deposit (₱)</label><input id="rm-deposit" type="number" min="0" value="${v('deposit')}" placeholder="0.00"></div>
+      <div class="fgrp"><label>Advance Rent (₱)</label><input id="rm-advance" type="number" min="0" value="${v('advance')}" placeholder="0.00"></div>
+    </div>
+    <div class="frow">
+      <div class="fgrp"><label>Date Paid</label><input id="rm-deposit-date" type="date" value="${v('depositDate')}"></div>
+      <div class="fgrp"><label>Deposit Notes</label><input id="rm-deposit-notes" value="${escAttr(v('depositNotes'))}" placeholder="e.g. 2 months deposit"></div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--g200);margin:.75rem 0">
+    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--p);margin-bottom:.75rem">🚨 Emergency Contact</div>
+    <div class="frow">
+      <div class="fgrp"><label>Name</label><input id="rm-ecname" value="${escAttr(v('ecName'))}" placeholder="Contact person"></div>
+      <div class="fgrp"><label>Relationship</label><input id="rm-ecrel" value="${escAttr(v('ecRel'))}" placeholder="e.g. Mother, Spouse"></div>
+    </div>
+    <div class="fgrp"><label>Emergency Contact Number</label><input id="rm-ecphone" value="${escAttr(v('ecPhone'))}" placeholder="09XX XXX XXXX"></div>
+    <div class="fgrp"><label>Notes</label><textarea id="rm-notes" rows="2" placeholder="Additional info...">${esc(v('notes'))}</textarea></div>
+
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="submitRoom('${id || ''}')">Save</button>
+    </div>
+  `);
+}
+
+
+function toggleCaretakerFields() {
+  const isC = document.getElementById('rm-type') && document.getElementById('rm-type').value === 'caretaker';
+  const wifiRow = document.getElementById('rm-wifi-row');
+  const rentEl  = document.getElementById('rm-rent');
+  if (wifiRow) wifiRow.style.display = isC ? 'none' : 'flex';
+  if (rentEl)  { rentEl.disabled = isC; rentEl.style.opacity = isC ? '.4' : ''; if (isC) rentEl.value = 0; }
+}
+
+function isCaretaker(room) { return room && room.type === 'caretaker'; }
+
+function submitRoom(id) {
+  const num    = document.getElementById('rm-num').value.trim();
+  const tenant = document.getElementById('rm-tenant').value.trim();
+  if (!num || !tenant) { toast('Room number and tenant name are required', 't-err'); return; }
+  const status = document.getElementById('rm-status').value;
+  saveRoom({
+    number:       num,
+    tenant,
+    type:         document.getElementById('rm-type').value,
+    persons:      +document.getElementById('rm-persons').value || 1,
+    rent:         +document.getElementById('rm-rent').value || 0,
+    wifi:         document.getElementById('rm-wifi').checked,
+    status,
+    active:       status === 'active',
+    phone:        document.getElementById('rm-phone').value.trim(),
+    email:        document.getElementById('rm-email').value.trim(),
+    moveIn:       document.getElementById('rm-movein').value,
+    moveOut:      document.getElementById('rm-moveout').value,
+    idType:       document.getElementById('rm-idtype').value,
+    deposit:      +document.getElementById('rm-deposit').value || 0,
+    advance:      +document.getElementById('rm-advance').value || 0,
+    depositDate:  document.getElementById('rm-deposit-date').value,
+    depositNotes: document.getElementById('rm-deposit-notes').value.trim(),
+    ecName:       document.getElementById('rm-ecname').value.trim(),
+    ecRel:        document.getElementById('rm-ecrel').value.trim(),
+    ecPhone:      document.getElementById('rm-ecphone').value.trim(),
+    notes:        document.getElementById('rm-notes').value.trim(),
+  }, id || null);
+  closeModal();
+  renderRooms();
+  if (document.getElementById('tab-tenants').classList.contains('active')) renderTenants();
+  toast(id ? 'Tenant updated' : 'Tenant added');
+}
+
+// MOVE-OUT SETTLEMENT MODAL
+function openSettlementModal(roomId) {
+  const r = getRoom(roomId);
+  if (!r) return;
+  const unpaid = db.bills.filter(b => b.roomId === roomId && b.balance > 0)
+    .sort((a, b) => a.period.localeCompare(b.period));
+  const totalOwed = unpaid.reduce((s, b) => s + b.balance, 0);
+  const deposit = +r.deposit || 0;
+  const advance = +r.advance || 0;
+  const held = deposit + advance;
+  const net = held - totalOwed;
+  const today = new Date().toISOString().slice(0, 10);
+
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">📤 Move-Out Settlement — Room ${esc(r.number)}</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div style="font-size:.875rem;margin-bottom:.75rem"><strong>${esc(r.tenant)}</strong></div>
+    <table style="width:100%;font-size:.875rem;margin-bottom:1rem">
+      ${unpaid.length
+        ? unpaid.map(b => `<tr><td>Unpaid — ${perLabel(b.period)}</td><td style="text-align:right;color:var(--err)">${fmt(b.balance)}</td></tr>`).join('')
+        : '<tr><td colspan="2" style="color:var(--ok)">✅ No unpaid bills</td></tr>'}
+      <tr style="border-top:1px solid var(--g200)"><td>Total Outstanding</td><td style="text-align:right;font-weight:700;color:var(--err)">${fmt(totalOwed)}</td></tr>
+      <tr><td>Security Deposit Held</td><td style="text-align:right">${fmt(deposit)}</td></tr>
+      <tr><td>Advance Rent Held</td><td style="text-align:right">${fmt(advance)}</td></tr>
+      <tr style="border-top:2px solid var(--g300);font-weight:700">
+        <td style="padding-top:.375rem">${net >= 0 ? 'REFUND DUE TO TENANT' : 'TENANT STILL OWES'}</td>
+        <td style="text-align:right;padding-top:.375rem;color:${net >= 0 ? 'var(--ok)' : 'var(--err)'};font-size:1rem">${fmt(Math.abs(net))}</td>
+      </tr>
+    </table>
+    ${totalOwed > 0 && held > 0 ? `
+    <div class="fcheck" style="margin-bottom:.75rem">
+      <input type="checkbox" id="settle-apply" checked>
+      <label for="settle-apply">Apply deposit/advance to unpaid bills (records payments, oldest first)</label>
+    </div>` : ''}
+    <div class="fgrp"><label>Move-out Date</label><input type="date" id="settle-date" value="${today}"></div>
+    <div style="font-size:.75rem;color:var(--g500);margin-bottom:.5rem">All bills and payment history will be kept and remain visible in past months.</div>
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="confirmSettlement('${roomId}')">✅ Confirm Move-Out</button>
+    </div>
+  `);
+}
+
+function confirmSettlement(roomId) {
+  const r = getRoom(roomId);
+  if (!r) return;
+  const date = document.getElementById('settle-date').value || new Date().toISOString().slice(0, 10);
+  const applyEl = document.getElementById('settle-apply');
+  const apply = applyEl ? applyEl.checked : false;
+
+  if (apply) {
+    let available = (+r.deposit || 0) + (+r.advance || 0);
+    const unpaid = db.bills.filter(b => b.roomId === roomId && b.balance > 0)
+      .sort((a, b) => a.period.localeCompare(b.period));
+    for (const b of unpaid) {
+      if (available <= 0) break;
+      const amt = Math.min(available, b.balance);
+      addPayment({ billId: b.id, date, amount: amt, mode: 'Deposit Applied', notes: 'Move-out settlement' });
+      available -= amt;
+    }
+  }
+  r.status = 'moved-out';
+  r.moveOut = date;
+  persistUpsert('rooms', r);
+  closeModal();
+  renderAll();
+  toast(`${r.tenant} marked as moved out — records preserved`);
+}
+
+// PAYMENT MODAL
+function openPaymentModal(billId = null) {
+  const activeBills = db.bills.filter(b => b.balance > 0).sort((a, b) => b.period.localeCompare(a.period));
+  const today = new Date().toISOString().slice(0, 10);
+  const selectedBill = billId ? db.bills.find(b => b.id === billId) : null;
+
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">Record Payment</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="fgrp">
+      <label>Bill</label>
+      <select id="pay-bill" onchange="updatePaymentInfo()">
+        <option value="">— Select Room &amp; Period —</option>
+        ${activeBills.map(b => {
+          const who = billRoomLabel(b);
+          const dd = dueDateInfo(b);
+          const lateTag = dd.daysLate >= 7 ? ` ⚠ ${dd.daysLate}d late` : dd.daysLate > 0 ? ` — ${dd.daysLate}d late` : '';
+          return `<option value="${b.id}" ${billId === b.id ? 'selected' : ''}>Room ${esc(who.number)} — ${esc(who.tenant)} — ${perLabel(b.period)} (Due ${dd.dateLabel}${lateTag} · Bal: ${fmt(b.balance)})</option>`;
+        }).join('')}
+      </select>
+    </div>
+    <div id="pay-bill-info" style="background:var(--g50);border-radius:var(--r);padding:.75rem;margin-bottom:1rem;font-size:.875rem;display:${selectedBill ? 'block' : 'none'}">
+      ${selectedBill ? `<div style="margin-bottom:.375rem">${dueDateInfo(selectedBill).badge}</div><div><strong>Total Due:</strong> ${fmt(selectedBill.totalDue)} &nbsp; <strong>Paid:</strong> ${fmt(selectedBill.paidAmount)} &nbsp; <strong>Balance:</strong> ${fmt(selectedBill.balance)}</div>` : ''}
+    </div>
+    <div class="frow">
+      <div class="fgrp"><label>Date</label><input type="date" id="pay-date" value="${today}"></div>
+      <div class="fgrp"><label>Amount (₱)</label><input type="number" id="pay-amt" placeholder="0.00"></div>
+    </div>
+    <div class="fgrp">
+      <label>Mode of Payment</label>
+      <select id="pay-mode">
+        ${PAY_MODES.map(m => `<option value="${m}">${m}</option>`).join('')}
+      </select>
+    </div>
+    <div class="fgrp">
+      <label>Notes (optional)</label>
+      <input id="pay-notes" placeholder="e.g. partial payment, post-dated check...">
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-ok" onclick="submitPayment()">💰 Record Payment</button>
+    </div>
+  `);
+}
+
+function updatePaymentInfo() {
+  const bid = document.getElementById('pay-bill').value;
+  const info = document.getElementById('pay-bill-info');
+  if (!bid) { info.style.display = 'none'; return; }
+  const bill = db.bills.find(b => b.id === bid);
+  info.style.display = 'block';
+  info.innerHTML = `<div style="margin-bottom:.375rem">${dueDateInfo(bill).badge}</div><div><strong>Total Due:</strong> ${fmt(bill.totalDue)} &nbsp; <strong>Paid:</strong> ${fmt(bill.paidAmount)} &nbsp; <strong>Balance:</strong> <span style="color:var(--err);font-weight:700">${fmt(bill.balance)}</span></div>`;
+}
+
+function submitPayment() {
+  const billId = document.getElementById('pay-bill').value;
+  const date = document.getElementById('pay-date').value;
+  const amount = +document.getElementById('pay-amt').value;
+  const mode = document.getElementById('pay-mode').value;
+  const notes = document.getElementById('pay-notes').value.trim();
+  if (!billId) { toast('Select a bill', 't-err'); return; }
+  if (!date) { toast('Enter date', 't-err'); return; }
+  if (!amount || amount <= 0) { toast('Enter a valid amount', 't-err'); return; }
+  const newPay = addPayment({ billId, date, amount, mode, notes });
+  closeModal();
+  renderPayments();
+  renderDashboard();
+  toast(`Payment of ${fmt(amount)} recorded`);
+  if (newPay && confirm('Payment recorded. Print a receipt for the tenant?')) printReceipt(newPay.id);
+}
+
+// EXPENSE MODAL
+function openExpenseModal(id = null) {
+  const e = id ? db.expenses.find(x => x.id === id) : null;
+  const today = new Date().toISOString().slice(0, 10);
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">${e ? 'Edit Expense' : 'Add Expense'}</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="frow">
+      <div class="fgrp"><label>Date</label><input type="date" id="exp-date" value="${e ? e.date : today}"></div>
+      <div class="fgrp"><label>Amount (₱)</label><input type="number" id="exp-amt" value="${e ? e.amount : ''}"></div>
+    </div>
+    <div class="fgrp"><label>Description</label><input id="exp-desc" value="${e ? escAttr(e.description) : ''}" placeholder="What was this for?"></div>
+    <div class="fgrp">
+      <label>Category</label>
+      <select id="exp-cat">
+        ${EXP_CATS.map(c => `<option value="${c}" ${e && e.category === c ? 'selected' : ''}>${c}</option>`).join('')}
+      </select>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="submitExpense('${id || ''}')">Save</button>
+    </div>
+  `);
+}
+
+function submitExpense(id) {
+  const date = document.getElementById('exp-date').value;
+  const amount = +document.getElementById('exp-amt').value;
+  const description = document.getElementById('exp-desc').value.trim();
+  const category = document.getElementById('exp-cat').value;
+  if (!date || !amount || !description) { toast('Fill in all fields', 't-err'); return; }
+  addExpense({ date, amount, description, category }, id || null);
+  closeModal();
+  renderExpenses();
+  toast(id ? 'Expense updated' : 'Expense added');
+}
+
+// SETTINGS MODAL
+function showSettingsModal() {
+  const s = db.settings;
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">⚙ Utility Rates & Settings</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="fgrp"><label>Property / Apartment Name</label><input id="set-name" value="${escAttr(s.name || '')}"></div>
+    <div class="fgrp"><label>⚡ Electricity Rate (₱ per kWh)</label><input type="number" id="set-elec" value="${s.electricity}"></div>
+    <div class="fgrp"><label>💧 Water Rate (₱ per person)</label><input type="number" id="set-water" value="${s.water}"></div>
+    <div class="fgrp"><label>📶 WiFi Rate (₱ per room/month) — charged to tenants</label><input type="number" id="set-wifi" value="${s.wifi}"></div>
+    <div class="fgrp"><label>📶 WiFi Subscription (₱/month) — your actual bill to ISP</label><input type="number" id="set-wifi-sub" value="${s.wifiSubscription || 0}" placeholder="e.g. 1299"></div>
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="saveSettings()">Save Rates</button>
+    </div>
+  `);
+}
+
+function saveSettings() {
+  db.settings.name = document.getElementById('set-name').value.trim() || 'My Apartment';
+  db.settings.electricity = +document.getElementById('set-elec').value || 17;
+  db.settings.water = +document.getElementById('set-water').value || 150;
+  db.settings.wifi = +document.getElementById('set-wifi').value || 300;
+  db.settings.wifiSubscription = +document.getElementById('set-wifi-sub').value || 0;
+  persistUpsert('settings', db.settings);
+  closeModal();
+  document.querySelector('header h1').textContent = '🏠 ' + db.settings.name;
+  toast('Rates saved');
+}
+
+// ======================== PRINT BILL ========================
+function buildBillHTML(bill) {
+  const who = billRoomLabel(bill);
+  const pays = db.payments.filter(p => p.billId === bill.id);
+  const dueDate = (() => {
+    const { y, m } = perParts(bill.period);
+    return new Date(y, m + 1, 5).toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
+  })();
+
+  return `
+    <div class="bill-print">
+      <div class="bp-head">
+        <h2>🏠 ${esc(db.settings.name)}</h2>
+        <p>Monthly Statement of Account</p>
+        <p><strong>${perLabel(bill.period)}</strong></p>
+      </div>
+      <div class="bp-info">
+        <p><strong>Room:</strong> ${esc(who.number)}</p>
+        <p><strong>Tenant:</strong> ${esc(who.tenant)}</p>
+        <p><strong>Due Date:</strong> ${dueDate}</p>
+        <p><strong>Date Generated:</strong> ${new Date().toLocaleDateString('en-PH')}</p>
+      </div>
+      <table class="bp-table">
+        <tr><td>Monthly Rent</td><td class="amt">${fmt(bill.rent)}</td></tr>
+        <tr><td>Electricity (${bill.prevReading} → ${bill.currReading} = ${bill.kWh} kWh × ₱${db.settings.electricity})</td><td class="amt">${fmt(bill.electricity)}</td></tr>
+        <tr><td>Water (${bill.persons} person${bill.persons > 1 ? 's' : ''} × ₱${db.settings.water})</td><td class="amt">${fmt(bill.water)}</td></tr>
+        <tr><td>WiFi</td><td class="amt">${bill.wifi > 0 ? fmt(bill.wifi) : '—'}</td></tr>
+        ${bill.prevBalance > 0 ? `<tr><td style="color:#dc2626">Previous Balance</td><td class="amt" style="color:#dc2626">${fmt(bill.prevBalance)}</td></tr>` : ''}
+      </table>
+      <div class="bp-total">
+        <span>TOTAL DUE</span>
+        <span>${fmt(bill.totalDue)}</span>
+      </div>
+      ${pays.length ? `
+      <div style="margin-top:1rem;font-size:.875rem">
+        <strong>Payments Received:</strong>
+        <table class="bp-table">
+          ${pays.map(p => `<tr><td>${p.date} — ${p.mode}</td><td class="amt" style="color:#16a34a">${fmt(p.amount)}</td></tr>`).join('')}
+        </table>
+        <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;padding-top:.375rem">
+          <span>${bill.status === 'paid' ? '✅ PAID IN FULL' : 'Remaining Balance'}</span>
+          <span style="color:${bill.balance > 0 ? '#dc2626' : '#16a34a'}">${fmt(bill.balance)}</span>
+        </div>
+      </div>` : ''}
+      <div class="bp-pay">
+        <strong>Payment Modes Accepted:</strong><br>
+        Cash • GCash • Maya • Bank Transfer<br>
+        <em>Please show this statement when paying.</em>
+      </div>
+      <div class="bp-footer">
+        Thank you for your prompt payment!<br>
+        Generated ${new Date().toLocaleString('en-PH')}
+      </div>
+    </div>
+  `;
+}
+
+function printBill(billId) {
+  const bill = db.bills.find(b => b.id === billId);
+  if (!bill) return;
+  document.getElementById('print-area').innerHTML = buildBillHTML(bill);
+  window.print();
+}
+
+function printAllBills() {
+  const p = getPer('bill-m', 'bill-y');
+  const bills = db.bills.filter(b => b.period === p)
+    .sort((a, b) => String(billRoomLabel(a).number).localeCompare(String(billRoomLabel(b).number), undefined, { numeric: true }));
+  if (!bills.length) { toast(`No bills generated yet for ${perLabel(p)}`, 't-err'); return; }
+  document.getElementById('print-area').innerHTML = bills.map(b => buildBillHTML(b)).join('');
+  window.print();
+  toast(`${bills.length} bill(s) sent to printer`);
+}
+
+// ======================== PAYMENT RECEIPT ========================
+function printReceipt(paymentId) {
+  const pay = db.payments.find(x => x.id === paymentId);
+  if (!pay) return;
+  const bill = db.bills.find(b => b.id === pay.billId);
+  const who = bill ? billRoomLabel(bill) : { number: '—', tenant: '—' };
+  // Paid-to-date as of this payment (includes this one)
+  const paidToDate = bill ? db.payments
+    .filter(x => x.billId === bill.id && x.createdAt <= pay.createdAt)
+    .reduce((s, x) => s + (+x.amount || 0), 0) : +pay.amount;
+  const balanceAfter = bill ? Math.max(0, bill.totalDue - paidToDate) : 0;
+  const rcptNo = 'R-' + String(pay.createdAt).slice(-8);
+
+  document.getElementById('print-area').innerHTML = `
+    <div class="bill-print">
+      <div class="bp-head">
+        <h2>🏠 ${esc(db.settings.name)}</h2>
+        <p>OFFICIAL PAYMENT RECEIPT</p>
+        <p><strong>Receipt No. ${rcptNo}</strong></p>
+      </div>
+      <div class="bp-info">
+        <p><strong>Date:</strong> ${pay.date}</p>
+        <p><strong>Received From:</strong> ${esc(who.tenant)}</p>
+        <p><strong>Room:</strong> ${esc(who.number)}</p>
+        ${bill ? `<p><strong>For Billing Period:</strong> ${perLabel(bill.period)}</p>` : ''}
+      </div>
+      <table class="bp-table">
+        <tr><td>Amount Received (${pay.mode})</td><td class="amt" style="font-weight:700">${fmt(pay.amount)}</td></tr>
+        ${bill ? `
+        <tr><td>Total Bill (${perLabel(bill.period)})</td><td class="amt">${fmt(bill.totalDue)}</td></tr>
+        <tr><td>Total Paid to Date</td><td class="amt" style="color:#16a34a">${fmt(paidToDate)}</td></tr>
+        <tr><td style="font-weight:700">${balanceAfter > 0 ? 'Remaining Balance' : 'Status'}</td>
+            <td class="amt" style="font-weight:700;color:${balanceAfter > 0 ? '#dc2626' : '#16a34a'}">${balanceAfter > 0 ? fmt(balanceAfter) : '✅ PAID IN FULL'}</td></tr>` : ''}
+      </table>
+      ${pay.notes ? `<p style="font-size:.8125rem;margin-top:.5rem"><strong>Notes:</strong> ${esc(pay.notes)}</p>` : ''}
+      <div style="display:flex;justify-content:space-between;margin-top:3rem;font-size:.8125rem">
+        <div style="border-top:1px solid #000;padding-top:.25rem;width:40%;text-align:center">Received by</div>
+        <div style="border-top:1px solid #000;padding-top:.25rem;width:40%;text-align:center">Tenant signature</div>
+      </div>
+      <div class="bp-footer">
+        Thank you!<br>
+        Generated ${new Date().toLocaleString('en-PH')}
+      </div>
+    </div>
+  `;
+  window.print();
+}
+
+// ======================== TENANT STATEMENT OF ACCOUNT ========================
+function printStatement(roomId) {
+  const r = getRoom(roomId);
+  if (!r) return;
+  const bills = db.bills.filter(b => b.roomId === roomId).sort((a, b) => a.period.localeCompare(b.period));
+  if (!bills.length) { toast('No billing history yet for this tenant', 't-err'); return; }
+
+  // Build a chronological ledger: each bill (charge), then its payments (credits)
+  let running = 0;
+  let rows = '';
+  let totalCharged = 0, totalPaid = 0;
+  bills.forEach(b => {
+    // Charge only what was newly billed this month (totalDue minus carried balance)
+    const newCharges = b.totalDue - (b.prevBalance || 0);
+    totalCharged += newCharges;
+    running += newCharges;
+    rows += `<tr>
+      <td>${perLabel(b.period)}</td>
+      <td>Bill — Rent ${fmt(b.rent)}, Elec ${fmt(b.electricity)}, Water ${fmt(b.water)}${b.wifi > 0 ? ', WiFi ' + fmt(b.wifi) : ''}</td>
+      <td class="amt">${fmt(newCharges)}</td>
+      <td class="amt"></td>
+      <td class="amt">${fmt(running)}</td>
+    </tr>`;
+    const pays = db.payments.filter(x => x.billId === b.id).sort((a, c) => (a.date || '').localeCompare(c.date || ''));
+    pays.forEach(x => {
+      totalPaid += +x.amount || 0;
+      running -= +x.amount || 0;
+      rows += `<tr>
+        <td>${x.date}</td>
+        <td style="color:#16a34a">Payment — ${esc(x.mode)}${x.notes ? ' · ' + esc(x.notes) : ''}</td>
+        <td class="amt"></td>
+        <td class="amt" style="color:#16a34a">${fmt(x.amount)}</td>
+        <td class="amt">${fmt(running)}</td>
+      </tr>`;
+    });
+  });
+
+  const moveInFmt = r.moveIn ? new Date(r.moveIn + 'T00:00:00').toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+  const period = `${perLabel(bills[0].period)} to ${perLabel(bills[bills.length - 1].period)}`;
+
+  document.getElementById('print-area').innerHTML = `
+    <div class="bill-print" style="max-width:560px">
+      <div class="bp-head">
+        <h2>🏠 ${esc(db.settings.name)}</h2>
+        <p>STATEMENT OF ACCOUNT</p>
+        <p><strong>${period}</strong></p>
+      </div>
+      <div class="bp-info">
+        <p><strong>Tenant:</strong> ${esc(r.tenant)}</p>
+        <p><strong>Room:</strong> ${esc(r.number)}</p>
+        <p><strong>Move-in:</strong> ${moveInFmt}</p>
+        ${r.moveOut ? `<p><strong>Move-out:</strong> ${new Date(r.moveOut + 'T00:00:00').toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>` : ''}
+        <p><strong>Statement Date:</strong> ${new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+      </div>
+      <table class="bp-table">
+        <tr style="font-weight:700;border-bottom:2px solid #333">
+          <td>Date</td><td>Description</td><td class="amt">Charges</td><td class="amt">Payments</td><td class="amt">Balance</td>
+        </tr>
+        ${rows}
+        <tr style="font-weight:700;border-top:2px solid #333">
+          <td colspan="2" style="padding-top:.5rem">TOTALS</td>
+          <td class="amt" style="padding-top:.5rem">${fmt(totalCharged)}</td>
+          <td class="amt" style="padding-top:.5rem;color:#16a34a">${fmt(totalPaid)}</td>
+          <td class="amt" style="padding-top:.5rem;color:${running > 0 ? '#dc2626' : '#16a34a'}">${fmt(running)}</td>
+        </tr>
+      </table>
+      <div class="bp-total">
+        <span>${running > 0 ? 'OUTSTANDING BALANCE' : '✅ FULLY PAID'}</span>
+        <span style="color:${running > 0 ? '#dc2626' : '#16a34a'}">${fmt(Math.max(0, running))}</span>
+      </div>
+      ${(+r.deposit || 0) + (+r.advance || 0) > 0 ? `
+      <p style="font-size:.8125rem;margin-top:.75rem;color:#555">
+        On file: Security Deposit ${fmt(r.deposit || 0)}${r.advance ? ' · Advance Rent ' + fmt(r.advance) : ''}
+      </p>` : ''}
+      <div class="bp-footer">
+        This statement reflects all recorded bills and payments as of the statement date.<br>
+        Generated ${new Date().toLocaleString('en-PH')}
+      </div>
+    </div>
+  `;
+  window.print();
+}
+
+// ======================== QUICK METER ENTRY ========================
+function openQuickEntry() {
+  const p = getPer('bill-m', 'bill-y');
+  const rooms = db.rooms.filter(r => roomStatus(r) === 'active')
+    .sort((a, b) => String(a.number).localeCompare(String(b.number), undefined, { numeric: true }));
+  if (!rooms.length) { toast('Add rooms first', 't-err'); return; }
+
+  const rows = rooms.map((r, i) => {
+    const existing = getBill(r.id, p);
+    const prevBill = getBill(r.id, prevPer(p));
+    const prevFromBill = prevBill && prevBill.currReading > 0 ? prevBill.currReading : null;
+    const prevVal = prevFromBill !== null ? prevFromBill : (existing ? existing.prevReading || '' : '');
+    const currVal = existing && existing.currReading > 0 ? existing.currReading : '';
+    const prevLocked = prevFromBill !== null;
+    const persons = existing ? existing.persons : r.persons;
+    const wifiOn = existing ? existing.wifi > 0 : !!r.wifi;
+    const caretaker = isCaretaker(r);
+    return `<tr>
+      <td><strong>${esc(r.number)}</strong><div style="font-size:.75rem;color:var(--g500)">${esc(r.tenant.split(' ')[0])}</div>${caretaker ? '<div style="font-size:.7rem;color:#0369a1">⚙ caretaker</div>' : ''}</td>
+      <td>${prevLocked
+        ? `<span id="qe-prev-${r.id}" data-v="${prevVal}">${prevVal}</span>`
+        : `<input type="number" inputmode="numeric" id="qe-previn-${r.id}" value="${prevVal}" placeholder="prev" style="width:80px;padding:.375rem" oninput="qeCalc('${r.id}')">`}
+      </td>
+      <td><input type="number" inputmode="numeric" id="qe-curr-${r.id}" value="${currVal}" placeholder="reading"
+            style="width:100px;padding:.5rem;font-weight:700"
+            data-idx="${i}" onkeydown="qeNext(event, ${i})" oninput="qeCalc('${r.id}')"></td>
+      <td>${caretaker ? '<span style="color:var(--g400);font-size:.8rem">—</span>' : `<input type="number" inputmode="numeric" id="qe-pers-${r.id}" value="${persons}" min="1" style="width:54px;padding:.5rem;text-align:center" oninput="qeCalc('${r.id}')">`}</td>
+      <td style="text-align:center">${caretaker ? '<span style="color:var(--g400);font-size:.8rem">—</span>' : `<input type="checkbox" id="qe-wifi-${r.id}" ${wifiOn ? 'checked' : ''} onchange="qeCalc('${r.id}')" style="width:1.125rem;height:1.125rem">`}</td>
+      <td style="text-align:right">
+        <strong id="qe-total-${r.id}">—</strong>
+        <div id="qe-brk-${r.id}" style="font-size:.6875rem;color:var(--g500);white-space:nowrap"></div>
+      </td>
+      <td><span id="qe-warn-${r.id}" style="color:var(--err);font-size:.875rem"></span></td>
+    </tr>`;
+  }).join('');
+
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">⚡ Quick Meter Entry — ${perLabel(p)}</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div style="font-size:.8125rem;color:var(--g500);margin-bottom:.75rem">
+      Type a reading, press <strong>Enter</strong> (or Next) to jump to the next room. Adjust 👥 persons (water) and 📶 WiFi per room if they changed this month — the Total Due updates live.
+    </div>
+    <div class="tbl-wrap" style="max-height:55vh;overflow-y:auto">
+      <table>
+        <thead style="position:sticky;top:0;background:var(--g50)"><tr><th>Room</th><th>Prev</th><th>Current</th><th>👥</th><th>📶</th><th style="text-align:right">Total Due</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr style="font-weight:700;border-top:2px solid var(--g300)">
+          <td colspan="5">TOTAL — ALL ROOMS</td>
+          <td style="text-align:right;color:var(--p)" id="qe-grand">—</td><td></td>
+        </tr></tfoot>
+      </table>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="saveQuickEntry()">💾 Save All Readings</button>
+    </div>
+  `);
+  // Initialize computed columns and focus the first empty input
+  rooms.forEach(r => qeCalc(r.id));
+  setTimeout(() => {
+    const inputs = [...document.querySelectorAll('[id^=qe-curr-]')];
+    const firstEmpty = inputs.find(el => !el.value) || inputs[0];
+    if (firstEmpty) firstEmpty.focus();
+  }, 100);
+}
+
+function qePrev(roomId) {
+  const locked = document.getElementById('qe-prev-' + roomId);
+  if (locked) return +locked.dataset.v || 0;
+  const input = document.getElementById('qe-previn-' + roomId);
+  return input ? (+input.value || 0) : 0;
+}
+
+function qeCalc(roomId) {
+  const room = getRoom(roomId);
+  const caretaker = isCaretaker(room);
+  const p = getPer('bill-m', 'bill-y');
+  const prev = qePrev(roomId);
+  const curr = +document.getElementById('qe-curr-' + roomId).value || 0;
+  const persEl = document.getElementById('qe-pers-' + roomId);
+  const wifiEl = document.getElementById('qe-wifi-' + roomId);
+  const persons = caretaker ? 1 : (+( persEl ? persEl.value : 1) || 1);
+  const wifiOn  = caretaker ? false : (wifiEl ? wifiEl.checked : false);
+  const totalEl = document.getElementById('qe-total-' + roomId);
+  const brkEl   = document.getElementById('qe-brk-' + roomId);
+  const warnEl  = document.getElementById('qe-warn-' + roomId);
+
+  if (!curr) { totalEl.textContent = '—'; brkEl.textContent = ''; warnEl.textContent = ''; qeGrand(); return; }
+  if (curr < prev) { totalEl.textContent = '—'; brkEl.textContent = ''; warnEl.textContent = '⚠ < prev'; qeGrand(); return; }
+
+  const kWh     = curr - prev;
+  const elec    = Math.round(kWh * db.settings.electricity);
+  const water   = caretaker ? 0 : Math.round(persons * db.settings.water);
+  const wifiAmt = caretaker ? 0 : (wifiOn ? db.settings.wifi : 0);
+  const prevBill = getBill(roomId, prevPer(p));
+  const prevBal  = prevBill ? prevBill.balance : 0;
+  const rent     = caretaker ? 0 : (+room.rent || 0);
+  const total    = rent + elec + water + wifiAmt + prevBal;
+
+  totalEl.textContent = fmt(total);
+  brkEl.textContent = caretaker
+    ? `${kWh}kWh ⚡${elec}${prevBal ? ' +bal ' + prevBal : ''}`
+    : `${kWh}kWh ⚡${elec} 💧${water}${wifiAmt ? ' 📶' + wifiAmt : ''}${prevBal ? ' +bal ' + prevBal : ''}`;
+  warnEl.textContent = kWh > 1000 ? '⚠ high' : '';
+  qeGrand();
+}
+
+function qeGrand() {
+  const grandEl = document.getElementById('qe-grand');
+  if (!grandEl) return;
+  let sum = 0;
+  document.querySelectorAll('[id^=qe-total-]').forEach(el => {
+    const v = parseFloat(el.textContent.replace(/[^0-9.]/g, ''));
+    if (!isNaN(v)) sum += v;
+  });
+  grandEl.textContent = sum ? fmt(sum) : '—';
+}
+
+function qeNext(e, idx) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const next = document.querySelector(`[id^=qe-curr-][data-idx="${idx + 1}"]`);
+  if (next) { next.focus(); next.select(); }
+  else e.target.blur();
+}
+
+function saveQuickEntry() {
+  const p = getPer('bill-m', 'bill-y');
+  const rooms = db.rooms.filter(r => roomStatus(r) === 'active');
+  let saved = 0;
+  const skipped = [];
+  rooms.forEach(r => {
+    const currEl = document.getElementById('qe-curr-' + r.id);
+    if (!currEl) return;
+    const curr = +currEl.value;
+    if (!curr) return;
+    const prev = qePrev(r.id);
+    if (curr < prev) { skipped.push(r.number); return; }
+    const persons = +document.getElementById('qe-pers-' + r.id).value || 1;
+    const wifi = document.getElementById('qe-wifi-' + r.id).checked;
+    saveBill(computeBill(r.id, p, prev, curr, persons, wifi));
+    saved++;
+  });
+  if (skipped.length) { toast(`Room ${skipped.join(', ')}: reading lower than previous — fix before saving`, 't-err'); return; }
+  if (!saved) { toast('Enter at least one reading', 't-err'); return; }
+  closeModal();
+  renderBilling();
+  renderDashboard();
+  toast(`${saved} bill(s) saved for ${perLabel(p)} ⚡`);
+}
+
+// ======================== MAINTENANCE ========================
+const MAINT_CATS = ['Plumbing','Electrical','Structural','Appliance','Pest Control','Painting','Common Area','Other'];
+const MAINT_STATUS = { open: { label: 'Open', cls: 'b-unpaid' }, 'in-progress': { label: 'In Progress', cls: 'b-partial' }, done: { label: 'Done', cls: 'b-paid' } };
+
+function saveMaintenance(data, id = null) {
+  let row;
+  if (id) {
+    const i = db.maintenance.findIndex(m => m.id === id);
+    if (i >= 0) { db.maintenance[i] = { ...db.maintenance[i], ...data }; row = db.maintenance[i]; }
+  } else {
+    row = { id: uid(), ...data, createdAt: Date.now() };
+    db.maintenance.push(row);
+  }
+  if (row) persistUpsert('maintenance', row);
+}
+
+function deleteMaintenance(id) {
+  const item = db.maintenance.find(m => m.id === id);
+  if (!item) return;
+  db.maintenance = db.maintenance.filter(m => m.id !== id);
+  persistDelete('maintenance', id);
+  renderMaintenance();
+  offerUndo(`"${esc(item.description)}" deleted`, () => {
+    db.maintenance.push(item);
+    persistUpsert('maintenance', item);
+    renderMaintenance();
+  });
+}
+
+function openMaintenanceModal(id = null) {
+  const rec = id ? db.maintenance.find(m => m.id === id) : null;
+  const v = (f, fb = '') => rec ? (rec[f] !== undefined ? rec[f] : fb) : fb;
+  const today = new Date().toISOString().slice(0, 10);
+  const roomOpts = [
+    `<option value="">— Building / Common Area —</option>`,
+    ...db.rooms.filter(r => roomStatus(r) === 'active')
+      .sort((a, b) => String(a.number).localeCompare(String(b.number), undefined, { numeric: true }))
+      .map(r => `<option value="${r.id}" ${v('roomId') === r.id ? 'selected' : ''}>Room ${esc(r.number)} — ${esc(r.tenant)}</option>`)
+  ].join('');
+
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">${rec ? 'Edit Repair Log' : '🔧 Log Repair / Maintenance'}</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="frow">
+      <div class="fgrp">
+        <label>Date Reported</label>
+        <input type="date" id="mt-date" value="${v('date', today)}">
+      </div>
+      <div class="fgrp">
+        <label>Room / Area</label>
+        <select id="mt-room">${roomOpts}</select>
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fgrp">
+        <label>Category</label>
+        <select id="mt-cat">
+          ${MAINT_CATS.map(c => `<option ${v('category') === c ? 'selected' : ''}>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="fgrp">
+        <label>Status</label>
+        <select id="mt-status">
+          ${Object.entries(MAINT_STATUS).map(([k, s]) => `<option value="${k}" ${v('status', 'open') === k ? 'selected' : ''}>${s.label}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="fgrp">
+      <label>Description <span style="color:var(--err)">*</span></label>
+      <textarea id="mt-desc" rows="2" placeholder="e.g. Leaking faucet in bathroom sink">${esc(v('description'))}</textarea>
+    </div>
+    <div class="frow">
+      <div class="fgrp">
+        <label>Reported By</label>
+        <input id="mt-reporter" value="${escAttr(v('reportedBy'))}" placeholder="e.g. Tenant, Caretaker, Self">
+      </div>
+      <div class="fgrp">
+        <label>Assigned To</label>
+        <input id="mt-assigned" value="${escAttr(v('assignedTo'))}" placeholder="e.g. Juan Plumber">
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fgrp">
+        <label>Date Resolved</label>
+        <input type="date" id="mt-resolved" value="${v('resolvedDate')}">
+      </div>
+      <div class="fgrp">
+        <label>Cost (₱)</label>
+        <input type="number" id="mt-cost" min="0" value="${v('cost', '')}" placeholder="0.00">
+      </div>
+    </div>
+    <div class="fgrp">
+      <label>Notes</label>
+      <textarea id="mt-notes" rows="2" placeholder="Parts used, warranty info, follow-up needed…">${esc(v('notes'))}</textarea>
+    </div>
+    <div style="font-size:.8125rem;color:var(--g500);margin-bottom:.5rem">
+      💡 Tip: if cost is paid, also add it to <strong>Expenses</strong> so it appears in your monthly reports.
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="submitMaintenance('${id || ''}')">Save</button>
+    </div>
+  `);
+}
+
+function submitMaintenance(id) {
+  const desc = document.getElementById('mt-desc').value.trim();
+  if (!desc) { toast('Description is required', 't-err'); return; }
+  const status = document.getElementById('mt-status').value;
+  const resolvedDate = document.getElementById('mt-resolved').value;
+  saveMaintenance({
+    date:         document.getElementById('mt-date').value,
+    roomId:       document.getElementById('mt-room').value,
+    category:     document.getElementById('mt-cat').value,
+    description:  desc,
+    reportedBy:   document.getElementById('mt-reporter').value.trim(),
+    assignedTo:   document.getElementById('mt-assigned').value.trim(),
+    status,
+    resolvedDate: status === 'done' && !resolvedDate ? new Date().toISOString().slice(0,10) : resolvedDate,
+    cost:         +document.getElementById('mt-cost').value || 0,
+    notes:        document.getElementById('mt-notes').value.trim(),
+  }, id || null);
+  closeModal();
+  renderMaintenance();
+  renderDashboard(); // keep open-issues count in sync
+  toast(id ? 'Repair log updated' : 'Repair logged');
+}
+
+function renderMaintenance() {
+  // Populate room filter dropdown
+  const roomSel = document.getElementById('maint-room-filter');
+  if (roomSel) {
+    const cur = roomSel.value;
+    roomSel.innerHTML = '<option value="">All Rooms</option>' +
+      [...new Set(db.maintenance.map(m => m.roomId))].map(rid => {
+        const r = getRoom(rid);
+        const label = rid ? (r ? `Room ${esc(r.number)} — ${esc(r.tenant)}` : `Room (deleted)`) : 'Building / Common';
+        return `<option value="${rid || ''}" ${cur === (rid || '') ? 'selected' : ''}>${label}</option>`;
+      }).join('');
+  }
+
+  const q      = (document.getElementById('maint-search')        || {}).value?.trim().toLowerCase() || '';
+  const roomF  = (document.getElementById('maint-room-filter')   || {}).value || '';
+  const statF  = (document.getElementById('maint-status-filter') || {}).value || '';
+  const catF   = (document.getElementById('maint-cat-filter')    || {}).value || '';
+
+  let items = [...db.maintenance].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  if (q)     items = items.filter(m => [m.description, m.category, m.reportedBy, m.assignedTo, m.notes].join(' ').toLowerCase().includes(q));
+  if (roomF) items = items.filter(m => (m.roomId || '') === roomF);
+  if (statF) items = items.filter(m => m.status === statF);
+  if (catF)  items = items.filter(m => m.category === catF);
+
+  // Stats
+  const all      = db.maintenance;
+  const open     = all.filter(m => m.status === 'open').length;
+  const progress = all.filter(m => m.status === 'in-progress').length;
+  const done     = all.filter(m => m.status === 'done').length;
+  const totalCost = all.reduce((s, m) => s + (+m.cost || 0), 0);
+  const statsEl = document.getElementById('maint-stats');
+  if (statsEl) statsEl.innerHTML = `
+    <div class="stat stat-red"><div class="stat-val">${open}</div><div class="stat-label">Open Issues</div></div>
+    <div class="stat stat-orange"><div class="stat-val">${progress}</div><div class="stat-label">In Progress</div></div>
+    <div class="stat stat-green"><div class="stat-val">${done}</div><div class="stat-label">Resolved</div></div>
+    <div class="stat stat-blue"><div class="stat-val">${fmt(totalCost)}</div><div class="stat-label">Total Repair Costs</div></div>
+  `;
+
+  const tbody = document.getElementById('maint-body');
+  if (!items.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">🔧</div><p>${q || roomF || statF || catF ? 'No records match your filters' : 'No maintenance records yet. Log a repair to get started.'}</p></div></td></tr>`;
+    document.getElementById('maint-total').textContent = '';
+    return;
+  }
+
+  tbody.innerHTML = items.map(m => {
+    const r = m.roomId ? getRoom(m.roomId) : null;
+    const roomLabel = m.roomId ? (r ? `Room ${esc(r.number)}` : 'Room (deleted)') : 'Common Area';
+    const st = MAINT_STATUS[m.status] || MAINT_STATUS.open;
+    const overdue = m.status !== 'done' && m.date && (Date.now() - new Date(m.date + 'T00:00:00')) > 7 * 86400000;
+    return `<tr${overdue ? ' style="background:#fff7ed"' : ''}>
+      <td style="white-space:nowrap">${m.date || '—'}</td>
+      <td><strong>${roomLabel}</strong>${m.roomId && r ? `<div style="font-size:.75rem;color:var(--g500)">${esc(r.tenant)}</div>` : ''}</td>
+      <td><span class="badge b-gray">${esc(m.category)}</span></td>
+      <td>
+        ${esc(m.description)}
+        ${m.assignedTo ? `<div style="font-size:.75rem;color:var(--g500)">👷 ${esc(m.assignedTo)}</div>` : ''}
+        ${m.notes ? `<div style="font-size:.75rem;color:var(--g500)">${esc(m.notes)}</div>` : ''}
+        ${overdue ? `<div style="font-size:.75rem;color:var(--warn);font-weight:600">⚠ Open for ${Math.floor((Date.now() - new Date(m.date + 'T00:00:00')) / 86400000)} days</div>` : ''}
+      </td>
+      <td style="font-size:.8125rem">${esc(m.reportedBy || '—')}</td>
+      <td><span class="badge ${st.cls}">${st.label}</span>${m.resolvedDate ? `<div style="font-size:.7rem;color:var(--g500)">${m.resolvedDate}</div>` : ''}</td>
+      <td style="text-align:right;font-weight:${m.cost > 0 ? '700' : 'normal'}">${m.cost > 0 ? fmt(m.cost) : '—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sec btn-sm" onclick="openMaintenanceModal('${m.id}')">Edit</button>
+        ${m.status !== 'done' ? `<button class="btn btn-ok btn-sm" onclick="quickResolveMaintenance('${m.id}')">✓ Done</button>` : ''}
+        <button class="btn btn-err btn-sm" onclick="deleteMaintenance('${m.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const shownCost = items.reduce((s, m) => s + (+m.cost || 0), 0);
+  document.getElementById('maint-total').textContent = items.length < all.length
+    ? `Showing ${items.length} of ${all.length} records — Cost: ${fmt(shownCost)}`
+    : `${all.length} record(s) — Total Cost: ${fmt(totalCost)}`;
+
+  restoreSort('tbl-maintenance');
+}
+
+function quickResolveMaintenance(id) {
+  const m = db.maintenance.find(x => x.id === id);
+  if (!m) return;
+  m.status = 'done';
+  m.resolvedDate = m.resolvedDate || new Date().toISOString().slice(0, 10);
+  persistUpsert('maintenance', m);
+  renderMaintenance();
+  renderDashboard();
+  toast('Marked as resolved ✓');
+}
+
+// ======================== BACKUP & RESTORE ========================
+function showBackupModal() {
+  const counts = `${db.rooms.length} rooms · ${db.bills.length} bills · ${db.payments.length} payments · ${db.expenses.length} expenses`;
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">💾 Export Data</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--r);padding:.75rem;font-size:.8125rem;margin-bottom:1rem">
+      ✅ Your data is saved to the cloud automatically — every change syncs instantly. This export is just a local copy you can keep as an extra backup.
+    </div>
+    <div style="font-size:.875rem;margin-bottom:1rem">Current data: <strong>${counts}</strong></div>
+    <button class="btn btn-p" style="width:100%;justify-content:center;margin-bottom:1rem" onclick="downloadBackup()">📥 Download Local Copy</button>
+    <div class="fgrp">
+      <label>Restore from a backup file</label>
+      <input type="file" id="restore-file" accept=".json">
+      <div style="font-size:.75rem;color:var(--g500);margin-top:.25rem">Restoring uploads the backup's contents to the cloud, replacing all current data.</div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Close</button>
+      <button class="btn btn-err" onclick="restoreBackup()">♻️ Restore Backup</button>
+    </div>
+  `);
+}
+
+function downloadBackup() {
+  const data = JSON.stringify(db, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `apartment-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  db.settings.lastBackup = Date.now();
+  persistUpsert('settings', db.settings);
+  renderNotices();
+  toast('Backup downloaded — keep it somewhere safe!');
+}
+
+function restoreBackup() {
+  const input = document.getElementById('restore-file');
+  const file = input && input.files && input.files[0];
+  if (!file) { toast('Choose a backup file first', 't-err'); return; }
+  const reader = new FileReader();
+  reader.onload = async () => {
+    let data;
+    try { data = JSON.parse(reader.result); }
+    catch { toast('That file is not a valid backup', 't-err'); return; }
+    if (!data || !Array.isArray(data.rooms) || !Array.isArray(data.bills) || !Array.isArray(data.payments)) {
+      toast('That file is not a valid backup', 't-err'); return;
+    }
+    // Initialize missing arrays and sanitize obvious date typos
+    data.rooms = Array.isArray(data.rooms) ? data.rooms : [];
+    data.bills = Array.isArray(data.bills) ? data.bills : [];
+    data.payments = Array.isArray(data.payments) ? data.payments : [];
+    data.expenses = Array.isArray(data.expenses) ? data.expenses : [];
+    data.maintenance = Array.isArray(data.maintenance) ? data.maintenance : [];
+    data.mortgages = Array.isArray(data.mortgages) ? data.mortgages : [];
+    data.settings = data.settings || newDB().settings;
+
+    const summary = `${data.rooms.length} rooms, ${data.bills.length} bills, ${data.payments.length} payments, ${data.expenses.length} expenses, ${data.mortgages.length} mortgages`;
+    if (!confirm(`Restore backup with ${summary}?\n\nThis will REPLACE everything currently in the app.`)) return;
+
+    // Fix obvious date typos like a 5-digit year (e.g. "42026-02-13" -> "2026-02-13")
+    const fixDate = s => {
+      if (!s || typeof s !== 'string') return s;
+      if (/^\d{5}-\d{2}-\d{2}$/.test(s)) return s.slice(1);
+      return s;
+    };
+    data.rooms.forEach(r => { if (r.moveIn) r.moveIn = fixDate(r.moveIn); if (r.moveOut) r.moveOut = fixDate(r.moveOut); });
+    data.expenses.forEach(e => { if (e.date) e.date = fixDate(e.date); });
+    data.payments.forEach(p => { if (p.date) p.date = fixDate(p.date); });
+    data.bills.forEach(b => { if (b.period && typeof b.period === 'string') b.period = b.period; /* keep as-is */ });
+
+    db = data;
+    toast('Uploading to cloud…');
+    try {
+      await replaceCloudWithDb();
+    } catch(e) {
+      toast('Upload error: ' + e.message, 't-err');
+      console.error('Restore failed:', e);
+      return;
+    }
+    closeModal();
+    renderAll();
+    toast('Backup restored');
+  };
+  reader.readAsText(file);
+}
+
+// ======================== TOAST ========================
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  setTimeout(() => { el.className = 'toast'; }, 2800);
+}
+
+// ======================== UNDO ========================
+let undoTimer = null;
+let undoFn = null;
+function offerUndo(msg, fn, seconds = 6) {
+  undoFn = fn;
+  let el = document.getElementById('undo-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'undo-toast';
+    el.className = 'undo-toast';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<span>${msg}</span><button onclick="doUndo()">↩ UNDO</button>`;
+  el.classList.add('show');
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { el.classList.remove('show'); undoFn = null; }, seconds * 1000);
+}
+function doUndo() {
+  const el = document.getElementById('undo-toast');
+  if (el) el.classList.remove('show');
+  clearTimeout(undoTimer);
+  if (undoFn) { undoFn(); undoFn = null; toast('Restored ✓'); }
+}
+
+// ======================== INIT ========================
+function initPeriodSels() {
+  const now = new Date();
+  const cm = now.getMonth();
+  const cy = now.getFullYear();
+
+  ['dash', 'bill', 'pay', 'exp', 'mort', 'bs', 'rep'].forEach(prefix => {
+    const mSel = document.getElementById(prefix + '-m');
+    const ySel = document.getElementById(prefix + '-y');
+    if (!mSel || !ySel) return;
+    mSel.innerHTML = MONTHS.map((n, i) => `<option value="${i}">${n}</option>`).join('');
+    ySel.innerHTML = '';
+    for (let y = 2026; y <= cy + 1; y++) {
+      ySel.innerHTML += `<option value="${y}">${y}</option>`;
+    }
+    mSel.value = cm;
+    ySel.value = cy;
+  });
+}
+
+// ======================== IMPORT / EXPORT ========================
+
+const CSV_HEADERS = ['Room Number','Tenant Name','No. of Persons','Monthly Rent','WiFi (Yes/No)','Phone','Email','Move-in Date (YYYY-MM-DD)','Emergency Contact Name','Emergency Contact Relationship','Emergency Contact Phone','Notes'];
+
+function downloadTemplate() {
+  const sample = [
+    ['101','Juan Dela Cruz','2','5000','Yes','09171234567','juan@email.com','2026-01-01','Maria Dela Cruz','Mother','09187654321',''],
+    ['102','Maria Santos','1','4500','No','09281234567','','2026-02-01','','','','']
+  ];
+  const rows = [CSV_HEADERS, ...sample].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  triggerDownload('apartment_rooms_template.csv', 'text/csv', rows);
+}
+
+function exportRoomsCSV() {
+  if (!db.rooms.length) { toast('No rooms to export', 't-err'); return; }
+  const rows = [CSV_HEADERS, ...db.rooms.map(r => [
+    r.number, r.tenant, r.persons, r.rent,
+    r.wifi ? 'Yes' : 'No',
+    r.phone || '', r.email || '', r.moveIn || '',
+    r.ecName || '', r.ecRel || '', r.ecPhone || '', r.notes || ''
+  ].map(v => `"${v}"`).join(','))].join('\n');
+  triggerDownload('apartment_rooms.csv', 'text/csv', rows);
+  toast('Exported successfully');
+}
+
+function triggerDownload(filename, type, content) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = filename;
+  a.click();
+}
+
+// ======================== EXPENSE IMPORT ========================
+
+const EXP_CSV_HEADERS = ['Date (YYYY-MM-DD)','Description','Category','Amount'];
+
+function downloadExpenseTemplate() {
+  const sample = [
+    ['2026-04-11','WiFi Bill','WiFi (Building)','2899'],
+    ['2026-04-15','Caretaker Salary','Caretaker Salary','2000'],
+    ['2026-04-24','Gravel & Sand','Maintenance','1000'],
+    ['2026-04-22','Cement','Repairs','600'],
+    ['2026-04-30','Loan Payment','Loan','3000'],
+  ];
+  const rows = [EXP_CSV_HEADERS, ...sample].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  triggerDownload('expenses_template.csv', 'text/csv', rows);
+}
+
+function openExpenseImportModal() {
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">📥 Import Expenses from Excel</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--r);padding:.875rem;font-size:.875rem;margin-bottom:1rem">
+      <strong>How to import your expense data:</strong>
+      <ol style="margin:.5rem 0 0 1.2rem;line-height:1.9">
+        <li>Download the template below</li>
+        <li>Open in Excel — copy your expense rows into it</li>
+        <li>Fill the 4 columns: <strong>Date, Description, Category, Amount</strong></li>
+        <li>Save as <strong>CSV (Comma delimited)</strong></li>
+        <li>Upload here and confirm</li>
+      </ol>
+    </div>
+    <div style="background:var(--g50);border:1px solid var(--g200);border-radius:var(--r);padding:.75rem;font-size:.8125rem;margin-bottom:1rem">
+      <strong>Valid Categories:</strong><br>
+      <span style="color:var(--g500);line-height:1.8">${EXP_CATS.join(' &nbsp;·&nbsp; ')}</span><br>
+      <span style="color:var(--warn)">⚠ Anything not on this list will be saved as "Other"</span>
+    </div>
+    <div style="margin-bottom:1rem">
+      <button class="btn btn-out btn-sm" onclick="downloadExpenseTemplate()">⬇ Download CSV Template</button>
+    </div>
+    <div class="fgrp">
+      <label>Upload your CSV file</label>
+      <input type="file" id="exp-import-file" accept=".csv,.txt" onchange="previewExpenseImport(this)">
+    </div>
+    <div id="exp-import-preview" style="margin-top:1rem"></div>
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" id="exp-import-btn" style="display:none" onclick="confirmExpenseImport()">✅ Import Expenses</button>
+    </div>
+  `);
+}
+
+let _expImportRows = [];
+
+function parseDate(raw) {
+  if (!raw) return '';
+  raw = raw.trim();
+  // Try YYYY-MM-DD first
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  // Try M/D/YYYY or M/D/YY
+  const parts = raw.replace(/\//g, '-').split('-');
+  if (parts.length === 3) {
+    let [a, b, c] = parts.map(x => x.trim());
+    // If year is 2 digits
+    if (c.length === 2) c = '20' + c;
+    // If year is 4 digits and first
+    if (a.length === 4) return `${a}-${b.padStart(2,'0')}-${c.padStart(2,'0')}`;
+    // M/D/YYYY
+    return `${c}-${a.padStart(2,'0')}-${b.padStart(2,'0')}`;
+  }
+  // M/D with no year — use current year from expense period selector
+  if (parts.length === 2) {
+    const y = document.getElementById('exp-y') ? document.getElementById('exp-y').value : new Date().getFullYear();
+    return `${y}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
+  }
+  return '';
+}
+
+function previewExpenseImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const rows = parseCSV(e.target.result);
+    _expImportRows = rows;
+    const preview = document.getElementById('exp-import-preview');
+    const btn = document.getElementById('exp-import-btn');
+    if (!rows.length) {
+      preview.innerHTML = '<div style="color:var(--err);font-size:.875rem">⚠ No data rows found.</div>';
+      btn.style.display = 'none';
+      return;
+    }
+    const valid = rows.filter(r => r[1] && r[3] && +r[3].replace(/[₱,]/g,'') > 0);
+    const skipped = rows.length - valid.length;
+    const total = valid.reduce((s, r) => s + (+r[3].replace(/[₱,]/g,'') || 0), 0);
+    preview.innerHTML = `
+      <div style="font-size:.875rem;margin-bottom:.625rem;color:var(--ok)">
+        <strong>${valid.length}</strong> expense(s) ready
+        ${skipped ? `<span style="color:var(--warn)"> · ${skipped} skipped (missing description or amount)</span>` : ''}
+        &nbsp;·&nbsp; Total: <strong>${fmt(total)}</strong>
+      </div>
+      <div class="tbl-wrap" style="max-height:240px;overflow-y:auto">
+        <table>
+          <thead><tr><th>Date</th><th>Description</th><th>Category</th><th style="text-align:right">Amount</th></tr></thead>
+          <tbody>
+            ${valid.map(r => {
+              const cat = EXP_CATS.includes(r[2] ? r[2].trim() : '') ? r[2].trim() : 'Other';
+              const amt = +r[3].replace(/[₱,]/g,'') || 0;
+              const dt = parseDate(r[0]);
+              return `<tr>
+                <td>${dt || '<span style="color:var(--warn)">check date</span>'}</td>
+                <td>${esc(r[1])}</td>
+                <td><span class="badge b-gray">${esc(cat)}</span></td>
+                <td style="text-align:right">${fmt(amt)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    btn.style.display = '';
+  };
+  reader.readAsText(file);
+}
+
+function confirmExpenseImport() {
+  const valid = _expImportRows.filter(r => r[1] && r[3] && +r[3].replace(/[₱,]/g,'') > 0);
+  let added = 0;
+  valid.forEach(r => {
+    const cat = EXP_CATS.includes(r[2] ? r[2].trim() : '') ? r[2].trim() : 'Other';
+    const amt = +r[3].replace(/[₱,]/g,'') || 0;
+    const dt  = parseDate(r[0]) || new Date().toISOString().slice(0,10);
+    addExpense({ date: dt, description: r[1].trim(), category: cat, amount: amt });
+    added++;
+  });
+  closeModal();
+  renderExpenses();
+  toast(`${added} expense(s) imported`);
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  // skip header row, parse each data row
+  return lines.slice(1).map(line => {
+    // handle quoted fields
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    return cols;
+  }).filter(cols => cols.some(c => c));
+}
+
+function openImportModal() {
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">📥 Import Rooms from Excel / CSV</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--r);padding:.875rem;font-size:.875rem;margin-bottom:1rem">
+      <strong>How to import:</strong>
+      <ol style="margin:.5rem 0 0 1.2rem;line-height:1.8">
+        <li>Download the CSV template below</li>
+        <li>Open it in Excel — fill in your tenant data</li>
+        <li>Save as <strong>CSV (Comma delimited)</strong> from Excel</li>
+        <li>Upload that CSV file here</li>
+      </ol>
+    </div>
+    <div style="margin-bottom:1rem">
+      <button class="btn btn-out btn-sm" onclick="downloadTemplate()">⬇ Download CSV Template</button>
+    </div>
+    <div class="fgrp">
+      <label>Upload your filled CSV file</label>
+      <input type="file" id="import-file" accept=".csv,.txt" onchange="previewImport(this)">
+    </div>
+    <div id="import-preview" style="margin-top:1rem"></div>
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" id="import-confirm-btn" style="display:none" onclick="confirmImport()">✅ Import Rooms</button>
+    </div>
+  `);
+}
+
+let _importRows = [];
+
+function previewImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const rows = parseCSV(e.target.result);
+    _importRows = rows;
+    const preview = document.getElementById('import-preview');
+    const btn = document.getElementById('import-confirm-btn');
+    if (!rows.length) {
+      preview.innerHTML = '<div style="color:var(--err);font-size:.875rem">⚠ No data rows found. Make sure the file has the right format.</div>';
+      btn.style.display = 'none';
+      return;
+    }
+    const valid = rows.filter(r => r[0] && r[1]);
+    const skipped = rows.length - valid.length;
+    preview.innerHTML = `
+      <div style="font-size:.875rem;margin-bottom:.625rem;color:var(--ok)"><strong>${valid.length}</strong> room(s) ready to import${skipped ? ` <span style="color:var(--warn)">(${skipped} skipped — missing room number or tenant name)</span>` : ''}</div>
+      <div class="tbl-wrap" style="max-height:220px;overflow-y:auto">
+        <table>
+          <thead><tr><th>Room</th><th>Tenant</th><th>Persons</th><th>Rent</th><th>WiFi</th><th>Phone</th></tr></thead>
+          <tbody>
+            ${valid.map(r => `<tr>
+              <td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2]||1)}</td>
+              <td>${r[3]?'₱'+Number(r[3]).toLocaleString():''}</td>
+              <td>${(r[4]||'').toLowerCase()==='yes'?'Yes':'No'}</td>
+              <td>${esc(r[5]||'')}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:.625rem">
+        <label style="display:flex;align-items:center;gap:.5rem;font-size:.875rem;cursor:pointer">
+          <input type="checkbox" id="import-skip-dup" checked>
+          Skip rooms with the same room number (avoid duplicates)
+        </label>
+      </div>
+    `;
+    btn.style.display = '';
+  };
+  reader.readAsText(file);
+}
+
+function confirmImport() {
+  const skipDup = document.getElementById('import-skip-dup').checked;
+  const valid = _importRows.filter(r => r[0] && r[1]);
+  let added = 0, skipped = 0;
+  valid.forEach(r => {
+    const num = r[0].trim();
+    if (skipDup && db.rooms.some(x => x.number === num)) { skipped++; return; }
+    saveRoom({
+      number:   num,
+      tenant:   r[1].trim(),
+      persons:  +r[2] || 1,
+      rent:     +r[3] || 0,
+      wifi:     (r[4]||'').trim().toLowerCase() === 'yes',
+      phone:    r[5] ? r[5].trim() : '',
+      email:    r[6] ? r[6].trim() : '',
+      moveIn:   r[7] ? r[7].trim() : '',
+      ecName:   r[8] ? r[8].trim() : '',
+      ecRel:    r[9] ? r[9].trim() : '',
+      ecPhone:  r[10] ? r[10].trim() : '',
+      notes:    r[11] ? r[11].trim() : '',
+      active:   true
+    });
+    added++;
+  });
+  closeModal();
+  renderRooms();
+  toast(`Imported ${added} room(s)${skipped ? `, skipped ${skipped} duplicate(s)` : ''}`);
+}
+
+// ======================== INIT ========================
+
+// ======================== BILL SHEET ========================
+function renderBillSheet() {
+  const p = getPer('bs-m', 'bs-y');
+  const rooms = db.rooms.filter(r => roomStatus(r) === 'active');
+  const container = document.getElementById('billsheet-content');
+
+  if (!rooms.length) {
+    container.innerHTML = `<div class="card"><div class="empty"><div class="empty-icon">🏠</div><p>No active rooms.</p></div></div>`;
+    return;
+  }
+
+  const rows = rooms.map(r => {
+    const b = getBill(r.id, p);
+    if (!b) return { r, b: null };
+    return { r, b };
+  });
+
+  const totalDue      = rows.reduce((s, x) => s + (x.b ? x.b.totalDue : 0), 0);
+  const totalCollected = rows.reduce((s, x) => {
+    if (!x.b) return s;
+    const ids = new Set([x.b.id]);
+    return s + db.payments.filter(p => ids.has(p.billId)).reduce((a, p) => a + (+p.amount||0), 0);
+  }, 0);
+  const totalBal      = rows.reduce((s, x) => s + (x.b ? x.b.balance : 0), 0);
+
+  container.innerHTML = `
+    <div class="card" id="bs-printable">
+      <!-- Print header (hidden on screen) -->
+      <div class="bs-print-header" style="display:none">
+        <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:.25rem">${esc(db.settings.name || 'Apartment')} — Monthly Bill Summary</h2>
+        <p style="color:#555;font-size:.875rem">${perLabel(p)} &nbsp;·&nbsp; Prepared: ${new Date().toLocaleDateString('en-PH', {year:'numeric',month:'long',day:'numeric'})}</p>
+        <hr style="margin:.75rem 0;border:none;border-top:2px solid #333">
+      </div>
+
+      <!-- Screen header -->
+      <div class="bs-screen-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+        <div>
+          <div style="font-weight:700;font-size:1rem">${perLabel(p)} — All Rooms</div>
+          <div style="font-size:.8125rem;color:var(--g500)">${rows.filter(x=>x.b).length} of ${rooms.length} rooms billed</div>
+        </div>
+        <div style="display:flex;gap:1rem;font-size:.875rem">
+          <span>Total Billed: <strong style="color:var(--p)">${fmt(totalDue)}</strong></span>
+          <span>Collected: <strong style="color:var(--ok)">${fmt(totalCollected)}</strong></span>
+          <span>Balance: <strong style="color:var(--err)">${fmt(totalBal)}</strong></span>
+        </div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table id="bs-table">
+          <thead>
+            <tr>
+              <th>Room</th>
+              <th>Tenant</th>
+              <th style="text-align:right">Rent</th>
+              <th style="text-align:center">kWh</th>
+              <th style="text-align:right">Electricity</th>
+              <th style="text-align:right">Water</th>
+              <th style="text-align:right">WiFi</th>
+              <th style="text-align:right">Prev. Bal</th>
+              <th style="text-align:right">Total Due</th>
+              <th style="text-align:right">Paid</th>
+              <th style="text-align:right">Balance</th>
+              <th style="text-align:center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(({r, b}) => {
+              if (!b) return `
+                <tr style="color:var(--g400)">
+                  <td><strong>${esc(r.number)}</strong></td>
+                  <td>${esc(r.tenant)}</td>
+                  <td colspan="10" style="text-align:center;font-style:italic">No bill generated</td>
+                </tr>`;
+              const statusCls = b.status === 'paid' ? 'b-paid' : b.status === 'partial' ? 'b-partial' : 'b-unpaid';
+              return `
+                <tr>
+                  <td><strong>${esc(r.number)}</strong></td>
+                  <td>${esc(r.tenant)}</td>
+                  <td style="text-align:right">${fmt(b.rent)}</td>
+                  <td style="text-align:center">${b.kWh}</td>
+                  <td style="text-align:right">${fmt(b.electricity)}</td>
+                  <td style="text-align:right">${fmt(b.water)}</td>
+                  <td style="text-align:right">${b.wifi > 0 ? fmt(b.wifi) : '—'}</td>
+                  <td style="text-align:right;color:${b.prevBalance > 0 ? 'var(--err)' : 'var(--g500)'}">${b.prevBalance > 0 ? fmt(b.prevBalance) : '—'}</td>
+                  <td style="text-align:right;font-weight:700">${fmt(b.totalDue)}</td>
+                  <td style="text-align:right;color:var(--ok)">${b.paidAmount > 0 ? fmt(b.paidAmount) : '—'}</td>
+                  <td style="text-align:right;font-weight:700;color:${b.balance > 0 ? 'var(--err)' : 'var(--ok)'}">${fmt(b.balance)}</td>
+                  <td style="text-align:center"><span class="badge ${statusCls}">${b.status}</span></td>
+                </tr>`;
+            }).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="font-weight:700;border-top:2px solid var(--g200);background:var(--g50)">
+              <td colspan="2">TOTAL</td>
+              <td></td><td></td><td></td><td></td><td></td><td></td>
+              <td style="text-align:right">${fmt(totalDue)}</td>
+              <td style="text-align:right;color:var(--ok)">${fmt(totalCollected)}</td>
+              <td style="text-align:right;color:var(--err)">${fmt(totalBal)}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div style="margin-top:1rem;font-size:.8125rem;color:var(--g500);border-top:1px solid var(--g200);padding-top:.75rem" class="bs-footer">
+        Prepared by: __________________ &nbsp;&nbsp; Date: __________________
+        &nbsp;&nbsp;&nbsp;&nbsp; Received by (Caretaker): __________________
+      </div>
+    </div>
+  `;
+}
+
+function printBillSheet() {
+  const content = document.getElementById('bs-printable');
+  if (!content) { toast('Select a month first', 't-err'); return; }
+  document.body.classList.add('printing-billsheet');
+  content.querySelector('.bs-print-header').style.display = 'block';
+  content.querySelector('.bs-screen-header').style.display = 'none';
+  window.print();
+  setTimeout(() => {
+    document.body.classList.remove('printing-billsheet');
+    content.querySelector('.bs-print-header').style.display = 'none';
+    content.querySelector('.bs-screen-header').style.display = 'flex';
+  }, 500);
+}
+
+// ======================== SORTABLE TABLES ========================
+function loadSortPrefs() { try { return JSON.parse(localStorage.getItem(SORT_KEY) || '{}'); } catch { return {}; } }
+function saveSortPrefs(prefs) { try { localStorage.setItem(SORT_KEY, JSON.stringify(prefs)); } catch {} }
+
+function applySort(table, colIdx, dir) {
+  const tbody = table.querySelector('tbody');
+  if (!tbody) return;
+  const rows = [...tbody.querySelectorAll(':scope > tr')];
+  if (rows.length < 2) return;
+
+  const toNum = s => {
+    const cleaned = s.replace(/[₱,%\s]/g, '').replace(/days?|kWh/gi, '');
+    return cleaned !== '' && !isNaN(cleaned) ? parseFloat(cleaned) : null;
+  };
+  rows.sort((a, b) => {
+    const va = (a.children[colIdx] || {}).textContent.trim();
+    const vb = (b.children[colIdx] || {}).textContent.trim();
+    const na = toNum(va), nb = toNum(vb);
+    let cmp = (na !== null && nb !== null) ? na - nb : va.localeCompare(vb, undefined, { numeric: true, sensitivity: 'base' });
+    return dir === 'asc' ? cmp : -cmp;
+  });
+  rows.forEach(r => tbody.appendChild(r));
+
+  // Update arrow indicators
+  const ths = table.querySelectorAll('thead th');
+  ths.forEach((h, i) => {
+    const a = h.querySelector('.sort-arrow');
+    if (a) a.remove();
+    delete h.dataset.dir;
+    if (i === colIdx) {
+      h.dataset.dir = dir;
+      h.insertAdjacentHTML('beforeend', `<span class="sort-arrow">${dir === 'asc' ? '▲' : '▼'}</span>`);
+    }
+  });
+}
+
+// Re-apply saved sort to a table after it's re-rendered
+function restoreSort(tableId) {
+  const prefs = loadSortPrefs();
+  if (!prefs[tableId]) return;
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const { col, dir } = prefs[tableId];
+  applySort(table, col, dir);
+}
+
+document.addEventListener('click', e => {
+  const th = e.target.closest('thead th');
+  if (!th || !th.textContent.trim()) return;
+  if (th.closest('#modal-box') || th.closest('#print-area')) return;
+  const table = th.closest('table');
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
+  if (!tbody) return;
+  const rows = [...tbody.querySelectorAll(':scope > tr')];
+  if (rows.length < 2) return;
+
+  const colIdx = [...th.parentNode.children].indexOf(th);
+  const dir = th.dataset.dir === 'asc' ? 'desc' : 'asc';
+  applySort(table, colIdx, dir);
+
+  // Persist if table has an id
+  if (table.id) {
+    const prefs = loadSortPrefs();
+    prefs[table.id] = { col: colIdx, dir };
+    saveSortPrefs(prefs);
+  }
+});
+
+function renderAll() {
+  document.querySelector('header h1').textContent = '🏠 ' + (db.settings.name || 'Apartment Manager');
+  renderDashboard();
+  renderRooms();
+  renderTenants();
+  renderBilling();
+  renderPayments();
+  renderExpenses();
+  renderMortgage();
+  renderMaintenance();
+  renderBillSheet();
+  renderReports();
+}
+
+// Pull fresh data from the cloud when the tab regains focus so a second
+// device or browser tab converges. Skips while a modal is open (don't yank
+// an in-progress edit) or while local changes are still pending (flush those
+// first, so a stale refresh can't clobber them). Throttled to avoid churn.
+let _refreshing = false;
+let _lastRefresh = 0;
+async function refreshFromCloud() {
+  if (_refreshing || !_session) return;
+  const overlay = document.getElementById('overlay');
+  if (overlay && overlay.classList.contains('open')) return;
+  if (loadOutbox().length) { await flushOutbox(); return; }
+  if (Date.now() - _lastRefresh < 8000) return;
+  _refreshing = true;
+  try {
+    await loadDB();
+    renderAll();
+    _lastRefresh = Date.now();
+  } catch (e) {
+    console.error('Refresh from cloud failed:', e);
+  } finally {
+    _refreshing = false;
+  }
+}
+
+async function init() {
+  const authed = await initAuth();
+  if (!authed) return; // login screen shown by initAuth
+  await loadDB();
+  // try sync of any locally-stored unsynced changes
+  try { await syncLocalBackup(); } catch (e) { console.error('Initial sync failed:', e); }
+  updateSyncStatus();
+  initPeriodSels();
+  document.querySelector('header h1').textContent = '🏠 ' + (db.settings.name || 'Apartment Manager');
+  const now = new Date();
+  document.getElementById('hdr-period').textContent = MONTHS[now.getMonth()] + ' ' + now.getFullYear();
+  renderDashboard();
+  _lastRefresh = Date.now();
+  window.addEventListener('online', () => { syncLocalBackup(); refreshFromCloud(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshFromCloud(); });
+  window.addEventListener('focus', refreshFromCloud);
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</div><!-- end app-root -->
+</body>
+</html>

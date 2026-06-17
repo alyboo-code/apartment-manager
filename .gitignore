@@ -1,0 +1,13 @@
+# macOS junk
+.DS_Store
+
+# Unrelated AI-tooling repo that got dropped in here — not part of this app
+that-git-life-main*
+
+# Data backups contain tenant names/phones (PII) — never commit these.
+# Keep them somewhere private (email, Drive). Drop one in ./backups/ if you like.
+apartment-backup-*.json
+backups/
+
+# Harness lock files
+.claude/scheduled_tasks.lock
