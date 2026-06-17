@@ -602,7 +602,27 @@ function rowPayload(table, row) {
   return table === 'settings' ? { user_id, config: row } : { ...row, user_id };
 }
 
-// Upsert a single row now; queue it if the network/DB is unavailable.
+// Tell apart a transient "offline" failure (will succeed on retry) from a real
+// server REJECTION (bad schema, missing column, permission, validation) that
+// retrying will NEVER fix. Rejections must be surfaced loudly — not hidden as
+// "saved offline", which is exactly how a missing-column bug stayed invisible.
+function classifyWriteError(e) {
+  if (!navigator.onLine) return { offline: true };
+  if (e instanceof TypeError) return { offline: true }; // fetch/network failure
+  // Online + a structured PostgREST/Postgres error object = a real rejection.
+  const message = (e && (e.message || e.details)) || 'unknown error';
+  return { offline: false, message: message + (e && e.hint ? ' — ' + e.hint : '') };
+}
+
+// Loudly report a write the server refused (and won't accept on retry).
+function reportWriteRejection(table, message) {
+  console.error('REJECTED write to ' + table + ':', message);
+  toast('⚠ NOT saved (' + table + '): ' + message, 't-err');
+  updateSyncStatus();
+}
+
+// Upsert a single row now. On failure: queue + gentle notice if offline; queue
+// + loud warning if the server rejected it (so it can never look like success).
 async function persistUpsert(table, row) {
   const payload = rowPayload(table, row);
   try {
@@ -611,13 +631,19 @@ async function persistUpsert(table, row) {
     flushOutbox();
     updateSyncStatus();
   } catch (e) {
-    console.error('Upsert ' + table + ' failed — queued offline:', e);
-    enqueue({ type: 'upsert', table, payload });
-    toast('Saved offline — will sync when back online', 't-err');
+    const cls = classifyWriteError(e);
+    if (cls.offline) {
+      console.warn('Upsert ' + table + ' deferred (offline) — queued:', e);
+      enqueue({ type: 'upsert', table, payload });
+      toast('Saved offline — will sync when back online', 't-err');
+    } else {
+      enqueue({ type: 'upsert', table, payload, hardError: cls.message });
+      reportWriteRejection(table, cls.message);
+    }
   }
 }
 
-// Delete a single row now; queue it if offline so the delete is durable.
+// Delete a single row now; same offline-vs-rejected handling as persistUpsert.
 async function persistDelete(table, id) {
   try {
     const { error } = await _sb.from(table).delete().eq('id', id).eq('user_id', _session.user.id);
@@ -625,8 +651,14 @@ async function persistDelete(table, id) {
     flushOutbox();
     updateSyncStatus();
   } catch (e) {
-    console.error('Delete ' + table + ' failed — queued offline:', e);
-    enqueue({ type: 'delete', table, id });
+    const cls = classifyWriteError(e);
+    if (cls.offline) {
+      console.warn('Delete ' + table + ' deferred (offline) — queued:', e);
+      enqueue({ type: 'delete', table, id });
+    } else {
+      enqueue({ type: 'delete', table, id, hardError: cls.message });
+      reportWriteRejection(table, cls.message);
+    }
   }
 }
 
@@ -647,7 +679,11 @@ async function flushOutbox() {
         const { error } = await _sb.from(op.table).delete().eq('id', op.id).eq('user_id', _session.user.id);
         if (error) throw error;
       }
-    } catch (e) { remaining.push(op); }
+    } catch (e) {
+      const cls = classifyWriteError(e);
+      if (cls.offline) delete op.hardError; else op.hardError = cls.message;
+      remaining.push(op);
+    }
   }
   writeOutbox(remaining);
   _flushing = false;
@@ -713,9 +749,26 @@ function prettyAge(timestamp) {
 function updateSyncStatus() {
   const el = document.getElementById('sync-status');
   if (!el) return;
-  const n = loadOutbox().length;
-  if (!n) { el.style.display = 'none'; return; }
-  el.textContent = `${n} change${n > 1 ? 's' : ''} pending sync`;
+  const q = loadOutbox();
+  const hard = q.filter(op => op.hardError);
+  // Reset any previous inline error styling
+  el.style.background = ''; el.style.color = ''; el.style.borderColor = '';
+  el.style.cursor = ''; el.title = '';
+
+  if (hard.length) {
+    // A real rejection the server won't accept on retry — show it in red.
+    el.textContent = `⚠ ${hard.length} change${hard.length > 1 ? 's' : ''} NOT saved — needs attention`;
+    el.className = 'sync-badge warn';
+    el.style.background = '#fee2e2';
+    el.style.color = '#991b1b';
+    el.style.borderColor = '#fecaca';
+    el.style.cursor = 'help';
+    el.title = hard.map(h => h.hardError).filter(Boolean).join('\n');
+    el.style.display = 'inline-flex';
+    return;
+  }
+  if (!q.length) { el.style.display = 'none'; return; }
+  el.textContent = `${q.length} change${q.length > 1 ? 's' : ''} pending sync`;
   el.className = 'sync-badge warn';
   el.style.display = 'inline-flex';
 }
