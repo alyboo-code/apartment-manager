@@ -397,6 +397,9 @@ th .sort-arrow { font-size: .625rem; margin-left: .25rem; color: var(--p); }
     </div>
     <div id="mort-total" style="text-align:right;padding:.75rem;font-weight:600;border-top:1px solid var(--g200)"></div>
   </div>
+
+  <!-- Mortgage Progress (all-time, independent of the month filter) -->
+  <div id="mortgage-progress"></div>
 </section>
 
 <!-- MAINTENANCE -->
@@ -838,7 +841,7 @@ function newDB() {
     expenses: [],
     maintenance: [],
     mortgages: [],
-    settings: { electricity: 17, wifi: 300, water: 150, name: 'My Apartment', wifiSubscription: 0 }
+    settings: { electricity: 17, wifi: 300, water: 150, name: 'My Apartment', wifiSubscription: 0, mortgageTotal: 0 }
   };
 }
 
@@ -1745,6 +1748,7 @@ function deleteMortgagePayment(id) {
 }
 
 function renderMortgage() {
+  renderMortgageProgress(); // all-time progress card, always kept in sync
   const p = getPer('mort-m', 'mort-y');
   const { y, m } = perParts(p);
   const q = (document.getElementById('mort-search') || {}).value?.trim().toLowerCase() || '';
@@ -1767,43 +1771,142 @@ function renderMortgage() {
     <td>${esc(r.type || 'Payment')}</td>
     <td><strong>${fmt(r.amount)}</strong></td>
     <td style="color:var(--g500);font-size:.8125rem">${esc(r.notes || '')}</td>
-    <td style="white-space:nowrap"><button class="btn btn-err btn-sm" onclick="deleteMortgagePayment('${r.id}')">✕</button></td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-sec btn-sm" onclick="openMortgageModal('${r.id}')">Edit</button>
+      <button class="btn btn-err btn-sm" onclick="deleteMortgagePayment('${r.id}')">✕</button>
+    </td>
   </tr>`).join('');
   restoreSort('tbl-mortgage');
 }
 
-function openMortgageModal() {
-  const today = new Date().toISOString().slice(0, 10);
+// All-time mortgage progress: total paid since the first payment, remaining
+// balance vs the set mortgage amount, % complete, a progress bar, and how long
+// you've been paying. Recomputed on every add/edit/delete (via renderMortgage).
+function renderMortgageProgress() {
+  const el = document.getElementById('mortgage-progress');
+  if (!el) return;
+  const all = (db.mortgages || []).filter(r => r.date);
+  const totalPaid = all.reduce((s, r) => s + (+r.amount || 0), 0);
+  const goal = +db.settings.mortgageTotal || 0;
+  const remaining = goal > 0 ? Math.max(0, goal - totalPaid) : 0;
+  const pct = goal > 0 ? Math.min(100, (totalPaid / goal) * 100) : 0;
+  const pctStr = pct.toFixed(1);
+
+  // Earliest recorded payment = mortgage start
+  let startDate = null;
+  all.forEach(r => { const d = new Date(r.date + 'T00:00:00'); if (!isNaN(d) && (!startDate || d < startDate)) startDate = d; });
+  const startYear = startDate ? startDate.getFullYear() : 2025;
+  const startLabel = startDate
+    ? startDate.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
+    : 'No payments yet';
+
+  // How long they've been paying
+  let yearsLabel = '—';
+  if (startDate) {
+    const now = new Date();
+    const months = Math.max(0, (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth()));
+    const yrs = Math.floor(months / 12), mos = months % 12;
+    yearsLabel = [yrs ? yrs + ' yr' + (yrs > 1 ? 's' : '') : '', mos ? mos + ' mo' + (mos > 1 ? 's' : '') : ''].filter(Boolean).join(' ') || 'Just started';
+  }
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🏦 Mortgage Progress</span>
+        <button class="btn btn-sec btn-sm" onclick="openMortgageGoalModal()">⚙ Set Mortgage Amount</button>
+      </div>
+      ${goal > 0 ? '' : `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--r);padding:.75rem;font-size:.875rem;margin-bottom:1rem">💡 Set your <strong>Total Mortgage Amount</strong> to see the remaining balance and percentage. So far you've paid <strong>${fmt(totalPaid)}</strong>.</div>`}
+      <div class="stats-grid">
+        <div class="stat stat-blue"><div class="stat-val">${goal > 0 ? fmt(goal) : '—'}</div><div class="stat-label">Total Mortgage Amount</div></div>
+        <div class="stat stat-green"><div class="stat-val">${fmt(totalPaid)}</div><div class="stat-label">Total Paid Since ${startYear}</div></div>
+        <div class="stat stat-orange"><div class="stat-val">${goal > 0 ? fmt(remaining) : '—'}</div><div class="stat-label">Remaining Balance</div></div>
+        <div class="stat ${pct >= 100 ? 'stat-green' : 'stat-blue'}"><div class="stat-val">${goal > 0 ? pctStr + '%' : '—'}</div><div class="stat-label">Completed</div></div>
+      </div>
+      ${goal > 0 ? `
+      <div style="margin:.5rem 0 1rem">
+        <div style="display:flex;justify-content:space-between;font-size:.8125rem;color:var(--g500);margin-bottom:.375rem">
+          <span>Paid ${fmt(totalPaid)}</span>
+          <span>${pctStr}% of ${fmt(goal)}</span>
+        </div>
+        <div style="background:var(--g200);border-radius:9999px;height:16px;overflow:hidden">
+          <div style="background:linear-gradient(90deg,#16a34a,#22c55e);width:${pct}%;height:100%;border-radius:9999px;transition:width .4s"></div>
+        </div>
+        ${pct >= 100 ? '<div style="text-align:center;color:var(--ok);font-weight:700;margin-top:.5rem">🎉 Mortgage fully paid!</div>' : ''}
+      </div>` : ''}
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:.875rem;color:var(--g700);border-top:1px solid var(--g200);padding-top:.75rem">
+        <div>📅 <strong>Mortgage Started:</strong> ${startLabel}</div>
+        <div>⏳ <strong>Years Paying:</strong> ${yearsLabel}</div>
+        <div>🧾 <strong>Payments Recorded:</strong> ${all.length}</div>
+      </div>
+    </div>`;
+}
+
+function openMortgageGoalModal() {
+  const s = db.settings;
   openModal(`
     <div class="modal-hdr">
-      <span class="modal-title">Record Mortgage Payment</span>
+      <span class="modal-title">🏦 Total Mortgage Amount</span>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
-    <div class="frow">
-      <div class="fgrp"><label>Date</label><input type="date" id="mort-date" value="${today}"></div>
-      <div class="fgrp"><label>Amount (₱)</label><input type="number" id="mort-amt" placeholder="0.00"></div>
+    <div class="fgrp">
+      <label>Total Mortgage Amount (₱)</label>
+      <input type="number" id="mort-goal" min="0" value="${+s.mortgageTotal || ''}" placeholder="e.g. 2000000">
     </div>
-    <div class="fgrp"><label>Type</label>
-      <select id="mort-type"><option>Principal</option><option>Interest</option><option>Fees</option><option>Other</option></select>
-    </div>
-    <div class="fgrp"><label>Notes</label><input id="mort-notes" placeholder="Optional notes"></div>
+    <div style="font-size:.8125rem;color:var(--g500);margin-bottom:.5rem">The full amount of your mortgage. Used to calculate remaining balance and progress.</div>
     <div class="modal-ftr">
       <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-p" onclick="submitMortgage()">Save</button>
+      <button class="btn btn-p" onclick="saveMortgageGoal()">Save</button>
     </div>
   `);
 }
 
-function submitMortgage() {
+function saveMortgageGoal() {
+  db.settings.mortgageTotal = +document.getElementById('mort-goal').value || 0;
+  persistUpsert('settings', db.settings);
+  closeModal();
+  renderMortgage();
+  toast('Mortgage amount saved');
+}
+
+function openMortgageModal(id = null) {
+  const m = id ? db.mortgages.find(x => x.id === id) : null;
+  const today = new Date().toISOString().slice(0, 10);
+  const TYPES = ['Principal', 'Interest', 'Fees', 'Other'];
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">${m ? 'Edit Mortgage Payment' : 'Record Mortgage Payment'}</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="frow">
+      <div class="fgrp"><label>Date</label><input type="date" id="mort-date" value="${m ? m.date : today}"></div>
+      <div class="fgrp"><label>Amount (₱)</label><input type="number" id="mort-amt" value="${m ? m.amount : ''}" placeholder="0.00"></div>
+    </div>
+    <div class="fgrp"><label>Type</label>
+      <select id="mort-type">${TYPES.map(t => `<option ${m && m.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+    </div>
+    <div class="fgrp"><label>Notes</label><input id="mort-notes" value="${m ? escAttr(m.notes || '') : ''}" placeholder="Optional notes"></div>
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="submitMortgage('${id || ''}')">Save</button>
+    </div>
+  `);
+}
+
+function submitMortgage(id) {
   const date = document.getElementById('mort-date').value;
   const amount = +document.getElementById('mort-amt').value;
   const type = document.getElementById('mort-type').value;
   const notes = document.getElementById('mort-notes').value.trim();
   if (!date || !amount || amount <= 0) { toast('Enter valid date and amount', 't-err'); return; }
-  addMortgagePayment({ date, amount, type, notes });
+  if (id) {
+    const m = db.mortgages.find(x => x.id === id);
+    if (m) { Object.assign(m, { date, amount, type, notes }); persistUpsert('mortgages', m); }
+  } else {
+    addMortgagePayment({ date, amount, type, notes });
+  }
   closeModal();
   renderMortgage();
-  toast('Mortgage payment recorded');
+  toast(id ? 'Mortgage payment updated' : 'Mortgage payment recorded');
 }
 
 // ======================== REPORTS RENDER ========================
