@@ -177,6 +177,39 @@ th .sort-arrow { font-size: .625rem; margin-left: .25rem; color: var(--p); }
 
 /* RESPONSIVE */
 @media (max-width: 640px) { main { padding: 1rem; } header { padding: .75rem 1rem; } }
+
+/* On phones, turn wide data tables into stacked cards (no sideways scrolling).
+   Each cell is labeled with its column header via data-label (set in JS).
+   Scoped to main .tbl-wrap so modal/print/summary tables are untouched. */
+@media screen and (max-width: 640px) {
+  main .tbl-wrap { overflow-x: visible; }
+  main .tbl-wrap table { border: none; }
+  main .tbl-wrap thead { position: absolute; left: -9999px; top: -9999px; } /* hidden but in DOM for a11y */
+  main .tbl-wrap tbody { display: block; }
+  main .tbl-wrap tbody tr {
+    display: block; background: #fff;
+    border: 1px solid var(--g200); border-radius: var(--r);
+    margin-bottom: .625rem; padding: .125rem 0;
+  }
+  main .tbl-wrap tbody tr:hover td { background: transparent; }
+  main .tbl-wrap td {
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    text-align: right; white-space: normal;
+    border: none; border-bottom: 1px solid var(--g100); padding: .55rem .9rem;
+  }
+  main .tbl-wrap tr td:last-child { border-bottom: none; }
+  main .tbl-wrap td::before {
+    content: attr(data-label);
+    margin-right: auto; text-align: left;
+    font-weight: 700; color: var(--g500);
+    text-transform: uppercase; font-size: .6875rem; letter-spacing: .04em;
+  }
+  /* Full-width cells (empty states, "No bill generated") and unlabeled cells */
+  main .tbl-wrap td[colspan] { display: block; text-align: center; }
+  main .tbl-wrap td[colspan]::before,
+  main .tbl-wrap td:not([data-label])::before,
+  main .tbl-wrap td[data-label='']::before { content: ''; }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.2" integrity="sha384-JWEyvHh+lRf0sN/WWY+QTQwX+CyWqmNg4tkc8GQzAMEtR2wGNrCJlvnu1lHD1kDm" crossorigin="anonymous"></script>
 </head>
@@ -265,6 +298,8 @@ th .sort-arrow { font-size: .625rem; margin-left: .25rem; color: var(--p); }
     </div>
     <div class="tbl-wrap">
       <table id="tbl-dash-rooms">
+        <thead><tr><th>Room</th><th>Tenant</th><th>Total Due</th><th>Paid</th><th>Balance</th><th>Status</th><th></th></tr></thead>
+        <tbody id="dash-rooms"></tbody>
       </table>
     </div>
   </div>
@@ -3753,6 +3788,35 @@ function restoreSort(tableId) {
   applySort(table, col, dir);
 }
 
+// ======================== RESPONSIVE TABLES ========================
+// Copy each table's column headers onto its cells as data-label, so the
+// mobile "stacked card" CSS can show "Tenant: Juan", "Balance: ₱500", etc.
+// Runs automatically on every render via a MutationObserver — no need to
+// touch the individual render functions.
+function decorateTables(root) {
+  (root || document).querySelectorAll('main .tbl-wrap table').forEach(table => {
+    const heads = [...table.querySelectorAll('thead th')].map(th => th.textContent.trim());
+    if (!heads.length) return;
+    table.querySelectorAll('tbody > tr').forEach(tr => {
+      [...tr.children].forEach((td, i) => {
+        if (td.hasAttribute('colspan')) return; // full-width cells (empty states)
+        td.setAttribute('data-label', heads[i] || '');
+      });
+    });
+  });
+}
+
+let _tblLabelTimer;
+function startTableLabeler() {
+  const main = document.querySelector('main');
+  if (!main) return;
+  decorateTables(main);
+  new MutationObserver(() => {
+    clearTimeout(_tblLabelTimer);
+    _tblLabelTimer = setTimeout(() => decorateTables(main), 50);
+  }).observe(main, { childList: true, subtree: true });
+}
+
 document.addEventListener('click', e => {
   const th = e.target.closest('thead th');
   if (!th || !th.textContent.trim()) return;
@@ -3823,6 +3887,7 @@ async function init() {
   const now = new Date();
   document.getElementById('hdr-period').textContent = MONTHS[now.getMonth()] + ' ' + now.getFullYear();
   renderDashboard();
+  startTableLabeler();
   _lastRefresh = Date.now();
   window.addEventListener('online', () => { syncLocalBackup(); refreshFromCloud(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshFromCloud(); });
