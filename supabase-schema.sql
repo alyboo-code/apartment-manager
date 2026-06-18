@@ -148,3 +148,23 @@ where c.relnamespace = 'public'::regnamespace
   and c.relname in ('rooms','bills','payments','expenses','maintenance','mortgages','settings')
 group by c.relname, c.relrowsecurity
 order by c.relname;
+
+
+-- ============================================================
+--  FOREIGN KEYS — intentionally OPTIONAL (left commented out)
+-- ============================================================
+--  This app deliberately KEEPS bills/payments when a room is deleted, and
+--  shows the tenant via a snapshot stored on the bill. So strict foreign keys
+--  are a poor fit: they'd either block room deletion or cascade-delete the
+--  history you want to preserve. The app already tolerates missing references.
+--
+--  If you ever want referential integrity that is still compatible with that
+--  design, uncomment these. ON DELETE SET NULL keeps the row but clears the
+--  dangling link; NOT VALID lets existing historical orphans stay as-is.
+--
+--  alter table public.bills       add constraint fk_bills_room
+--    foreign key ("roomId") references public.rooms(id) on delete set null not valid;
+--  alter table public.payments    add constraint fk_payments_bill
+--    foreign key ("billId") references public.bills(id) on delete set null not valid;
+--  alter table public.maintenance add constraint fk_maint_room
+--    foreign key ("roomId") references public.rooms(id) on delete set null not valid;

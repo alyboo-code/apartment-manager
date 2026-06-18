@@ -85,11 +85,40 @@ A downloaded backup is what saved 16 rooms after a data-loss scare in June 2026.
 
 ---
 
-## Known limitations / future work
+## Operations & hardening checklist
 
-- No automated backups yet — enable Supabase Point-in-Time Recovery (paid plan).
-- Failed writes can look like "saved offline"; a clearer rejected-vs-offline
-  error state is a good next improvement.
-- Money is handled as floating-point in the browser; integer centavos would be
-  more audit-safe at scale.
-- No real-time multi-device sync; the app refreshes on tab focus instead.
+Things to set up in the **Supabase / Netlify dashboards** (one-time):
+
+### Automated backups (do this)
+- **Free plan:** Supabase does NOT keep automated backups. Your safety net is
+  the in-app **💾 Backup → Download Local Copy** — do it on a schedule and keep
+  the file in Drive/email. Consider upgrading for real backups.
+- **Pro plan:** Project → **Database → Backups** → enable **Point-in-Time
+  Recovery (PITR)**. Then you can roll the whole database back to any minute.
+
+### Auth abuse protection
+- Supabase → **Authentication → Attack Protection** (a.k.a. Rate Limits):
+  leave the built-in login/signup rate limits on, and turn on **CAPTCHA**
+  (hCaptcha or Cloudflare Turnstile) to stop bots and password-guessing.
+
+### Security headers (already in the repo)
+- `_headers` adds a Content-Security-Policy + clickjacking/MIME protections.
+  It applies automatically **when you deploy the folder/repo** to Netlify
+  (not when you drag a single file). Setting up Netlify → GitHub auto-deploy
+  makes this automatic.
+
+---
+
+## Deliberately deferred (revisit if you grow past a single landlord)
+
+These are real improvements but **not worth the complexity for one user**:
+
+- **Real-time multi-device sync + optimistic concurrency.** Today the app
+  refreshes on tab focus, which is plenty for one person on a phone + laptop.
+  Add Supabase Realtime + an `updated_at` conflict check only if multiple
+  people will edit the same property at the same time.
+- **Money as integer centavos.** Amounts are floating-point in the browser.
+  Fine at this scale; revisit only for audit-grade accounting. (This is a data
+  migration — do it deliberately, with a backup, not casually.)
+- **Foreign keys.** Intentionally omitted — see the note at the bottom of
+  `supabase-schema.sql`. The app preserves history by design.
