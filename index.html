@@ -1051,7 +1051,7 @@ function fillPeriodSels(mId, yId, onChange) {
   const ySel = document.getElementById(yId);
   const now = new Date();
   mSel.innerHTML = MONTHS.map((n, i) => `<option value="${i}">${n}</option>`).join('');
-  const startY = 2026;
+  const startY = Math.min(2025, earliestDataYear());
   ySel.innerHTML = '';
   for (let y = startY; y <= now.getFullYear() + 1; y++) {
     ySel.innerHTML += `<option value="${y}">${y}</option>`;
@@ -3225,10 +3225,31 @@ function doUndo() {
 }
 
 // ======================== INIT ========================
+// Earliest year we have any record for, floored at 2025 (mortgage start).
+// Keeps the year dropdowns from ever hiding data you actually entered.
+function earliestDataYear() {
+  let min = 2025;
+  const yearOf = s => (s && typeof s === 'string') ? parseInt(s.slice(0, 4), 10) : 0;
+  const scan = (arr, field) => (arr || []).forEach(r => {
+    const y = yearOf(r[field]);
+    if (y > 2000 && y < min) min = y;
+  });
+  if (typeof db !== 'undefined' && db) {
+    scan(db.mortgages, 'date');
+    scan(db.payments, 'date');
+    scan(db.expenses, 'date');
+    scan(db.maintenance, 'date');
+    (db.bills || []).forEach(b => { const y = yearOf(b.period); if (y > 2000 && y < min) min = y; });
+    (db.rooms || []).forEach(r => { ['moveIn', 'moveOut'].forEach(f => { const y = yearOf(r[f]); if (y > 2000 && y < min) min = y; }); });
+  }
+  return min;
+}
+
 function initPeriodSels() {
   const now = new Date();
   const cm = now.getMonth();
   const cy = now.getFullYear();
+  const startY = Math.min(2025, earliestDataYear());
 
   ['dash', 'bill', 'pay', 'exp', 'mort', 'bs', 'rep'].forEach(prefix => {
     const mSel = document.getElementById(prefix + '-m');
@@ -3236,7 +3257,7 @@ function initPeriodSels() {
     if (!mSel || !ySel) return;
     mSel.innerHTML = MONTHS.map((n, i) => `<option value="${i}">${n}</option>`).join('');
     ySel.innerHTML = '';
-    for (let y = 2026; y <= cy + 1; y++) {
+    for (let y = startY; y <= cy + 1; y++) {
       ySel.innerHTML += `<option value="${y}">${y}</option>`;
     }
     mSel.value = cm;
