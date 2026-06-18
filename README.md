@@ -31,23 +31,29 @@ Browser (index.html)  ──►  Supabase  (Postgres tables + Auth)
 
 ---
 
-## Supabase setup (run these SQL scripts once, in order)
+## Supabase setup — one canonical schema file
 
-Open Supabase → **SQL Editor** → New query → paste → **Run**.
+**`supabase-schema.sql`** is the single source of truth for the database.
+Open Supabase → **SQL Editor** → New query → paste the whole file → **Run**.
+It is **idempotent** (safe to run any time): it creates missing tables, adds
+missing columns, and applies Row Level Security with owner-only policies.
 
-| Order | File | What it does |
-|------:|------|--------------|
-| 1 | `supabase-mortgages-table.sql` | Creates the `mortgages` table the Mortgage tab needs |
-| 2 | `supabase-fix-rooms-columns.sql` | Adds room columns the app writes (emergency contact, notes, idType, active…) |
-| 3 | `supabase-rls-setup.sql` | Confirms Row Level Security + owner-only policies on every table |
+### ⭐ Adding a new field to the app — the checklist that prevents data loss
+When you add a field in `index.html` (e.g. a new tenant detail):
 
-These are **schema-as-code**: if you ever add a new field in `index.html`, add
-the matching column here too, or saving that field will silently fail.
+1. Add `alter table public.<table> add column if not exists <name> <type>;`
+   to `supabase-schema.sql` (camelCase names must be `"double-quoted"`).
+2. Re-run `supabase-schema.sql` in Supabase.
+3. Then deploy the app.
+
+If you skip steps 1–2, saving that field fails — but the app now shows a red
+**"⚠ NOT saved — needs attention"** badge so you'll know immediately (it no
+longer hides as "saved offline").
 
 ### Tables
 `rooms`, `bills`, `payments`, `expenses`, `maintenance`, `mortgages`,
 `settings` (one JSON row per user). All keyed by a text `id` and scoped by
-`user_id`.
+`user_id`, isolated per account by Row Level Security.
 
 ---
 

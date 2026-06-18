@@ -178,7 +178,7 @@ th .sort-arrow { font-size: .625rem; margin-left: .25rem; color: var(--p); }
 /* RESPONSIVE */
 @media (max-width: 640px) { main { padding: 1rem; } header { padding: .75rem 1rem; } }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.2" integrity="sha384-JWEyvHh+lRf0sN/WWY+QTQwX+CyWqmNg4tkc8GQzAMEtR2wGNrCJlvnu1lHD1kDm" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -3633,18 +3633,15 @@ document.addEventListener('click', e => {
   }
 });
 
+// Re-render only the tab currently on screen. The other tabs re-render
+// themselves when you switch to them (see showTab), so drawing all 9 here
+// every time was wasted work.
 function renderAll() {
   document.querySelector('header h1').textContent = '🏠 ' + (db.settings.name || 'Apartment Manager');
-  renderDashboard();
-  renderRooms();
-  renderTenants();
-  renderBilling();
-  renderPayments();
-  renderExpenses();
-  renderMortgage();
-  renderMaintenance();
-  renderBillSheet();
-  renderReports();
+  const renders = { dashboard: renderDashboard, rooms: renderRooms, tenants: renderTenants, billing: renderBilling, payments: renderPayments, expenses: renderExpenses, mortgage: renderMortgage, maintenance: renderMaintenance, billsheet: renderBillSheet, reports: renderReports };
+  const activeSection = document.querySelector('main section.active');
+  const name = activeSection ? activeSection.id.replace('tab-', '') : 'dashboard';
+  (renders[name] || renderDashboard)();
 }
 
 // Pull fresh data from the cloud when the tab regains focus so a second
