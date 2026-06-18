@@ -1809,6 +1809,24 @@ function renderMortgageProgress() {
     yearsLabel = [yrs ? yrs + ' yr' + (yrs > 1 ? 's' : '') : '', mos ? mos + ' mo' + (mos > 1 ? 's' : '') : ''].filter(Boolean).join(' ') || 'Just started';
   }
 
+  // Estimated payoff date, projected from your average monthly payment pace
+  let payoffHtml = '';
+  if (goal > 0 && remaining > 0 && startDate) {
+    const now = new Date();
+    const monthsElapsed = Math.max(1, (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth()) + 1);
+    const avgMonthly = totalPaid / monthsElapsed;
+    if (avgMonthly > 0) {
+      const monthsLeft = Math.ceil(remaining / avgMonthly);
+      const payoff = new Date(now.getFullYear(), now.getMonth() + monthsLeft, 1);
+      const ly = Math.floor(monthsLeft / 12), lm = monthsLeft % 12;
+      const leftLabel = [ly ? ly + ' yr' + (ly > 1 ? 's' : '') : '', lm ? lm + ' mo' + (lm > 1 ? 's' : '') : ''].filter(Boolean).join(' ') || 'less than a month';
+      payoffHtml = `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--r);padding:.625rem .875rem;font-size:.875rem;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+        <span>🏁 <strong>Est. payoff:</strong> ${payoff.toLocaleDateString('en-PH', { year: 'numeric', month: 'long' })}</span>
+        <span style="color:var(--g500)">· about ${leftLabel} left, at ${fmt(avgMonthly)}/mo average pace</span>
+      </div>`;
+    }
+  }
+
   el.innerHTML = `
     <div class="card">
       <div class="card-header">
@@ -1833,6 +1851,7 @@ function renderMortgageProgress() {
         </div>
         ${pct >= 100 ? '<div style="text-align:center;color:var(--ok);font-weight:700;margin-top:.5rem">🎉 Mortgage fully paid!</div>' : ''}
       </div>` : ''}
+      ${payoffHtml}
       <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:.875rem;color:var(--g700);border-top:1px solid var(--g200);padding-top:.75rem">
         <div>📅 <strong>Mortgage Started:</strong> ${startLabel}</div>
         <div>⏳ <strong>Years Paying:</strong> ${yearsLabel}</div>
