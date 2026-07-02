@@ -1747,6 +1747,7 @@ function renderPayments() {
       <td><span class="badge b-blue">${esc(x.mode)}</span></td>
       <td style="color:var(--g500);font-size:.8125rem">${esc(x.notes || '')}</td>
       <td style="white-space:nowrap">
+        <button class="btn btn-sec btn-sm" onclick="openPaymentModal(null,'${x.id}')">Edit</button>
         <button class="btn btn-out btn-sm" onclick="printReceipt('${x.id}')" title="Print receipt">🧾</button>
         <button class="btn btn-err btn-sm" onclick="deletePayment('${x.id}')">✕</button>
       </td>
@@ -2492,21 +2493,26 @@ function confirmSettlement(roomId) {
 }
 
 // PAYMENT MODAL
-function openPaymentModal(billId = null) {
-  const activeBills = db.bills.filter(b => b.balance > 0).sort((a, b) => b.period.localeCompare(a.period));
+function openPaymentModal(billId = null, editId = null) {
+  const editPay = editId ? db.payments.find(x => x.id === editId) : null;
+  if (editPay) billId = editPay.billId; // the bill is fixed when editing
   const today = new Date().toISOString().slice(0, 10);
+  const activeBills = db.bills.filter(b => b.balance > 0).sort((a, b) => b.period.localeCompare(a.period));
+  // When editing, make sure the payment's bill is selectable even if it's now fully paid
+  const editBill = editPay ? db.bills.find(b => b.id === editPay.billId) : null;
+  const billOptions = editBill && !activeBills.some(b => b.id === editBill.id) ? [editBill, ...activeBills] : activeBills;
   const selectedBill = billId ? db.bills.find(b => b.id === billId) : null;
 
   openModal(`
     <div class="modal-hdr">
-      <span class="modal-title">Record Payment</span>
+      <span class="modal-title">${editPay ? 'Edit Payment' : 'Record Payment'}</span>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="fgrp">
       <label>Bill</label>
-      <select id="pay-bill" onchange="updatePaymentInfo()">
-        <option value="">— Select Room &amp; Period —</option>
-        ${activeBills.map(b => {
+      <select id="pay-bill" onchange="updatePaymentInfo()" ${editPay ? 'disabled' : ''}>
+        ${editPay ? '' : '<option value="">— Select Room &amp; Period —</option>'}
+        ${billOptions.map(b => {
           const who = billRoomLabel(b);
           const dd = dueDateInfo(b);
           const lateTag = dd.daysLate >= 7 ? ` ⚠ ${dd.daysLate}d late` : dd.daysLate > 0 ? ` — ${dd.daysLate}d late` : '';
@@ -2518,22 +2524,22 @@ function openPaymentModal(billId = null) {
       ${selectedBill ? `<div style="margin-bottom:.375rem">${dueDateInfo(selectedBill).badge}</div><div><strong>Total Due:</strong> ${fmt(selectedBill.totalDue)} &nbsp; <strong>Paid:</strong> ${fmt(selectedBill.paidAmount)} &nbsp; <strong>Balance:</strong> ${fmt(selectedBill.balance)}</div>` : ''}
     </div>
     <div class="frow">
-      <div class="fgrp"><label>Date</label><input type="date" id="pay-date" value="${today}"></div>
-      <div class="fgrp"><label>Amount (₱)</label><input type="number" id="pay-amt" placeholder="0.00"></div>
+      <div class="fgrp"><label>Date</label><input type="date" id="pay-date" value="${editPay ? editPay.date : today}"></div>
+      <div class="fgrp"><label>Amount (₱)</label><input type="number" id="pay-amt" value="${editPay ? editPay.amount : ''}" placeholder="0.00"></div>
     </div>
     <div class="fgrp">
       <label>Mode of Payment</label>
       <select id="pay-mode">
-        ${PAY_MODES.map(m => `<option value="${m}">${m}</option>`).join('')}
+        ${PAY_MODES.map(m => `<option ${editPay && editPay.mode === m ? 'selected' : ''}>${m}</option>`).join('')}
       </select>
     </div>
     <div class="fgrp">
       <label>Notes (optional)</label>
-      <input id="pay-notes" placeholder="e.g. partial payment, post-dated check...">
+      <input id="pay-notes" value="${editPay ? escAttr(editPay.notes || '') : ''}" placeholder="e.g. partial payment, post-dated check...">
     </div>
     <div class="modal-ftr">
       <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-ok" onclick="submitPayment()">💰 Record Payment</button>
+      <button class="btn btn-ok" onclick="submitPayment('${editId || ''}')">${editPay ? '💾 Save Changes' : '💰 Record Payment'}</button>
     </div>
   `);
 }
@@ -2547,8 +2553,9 @@ function updatePaymentInfo() {
   info.innerHTML = `<div style="margin-bottom:.375rem">${dueDateInfo(bill).badge}</div><div><strong>Total Due:</strong> ${fmt(bill.totalDue)} &nbsp; <strong>Paid:</strong> ${fmt(bill.paidAmount)} &nbsp; <strong>Balance:</strong> <span style="color:var(--err);font-weight:700">${fmt(bill.balance)}</span></div>`;
 }
 
-function submitPayment() {
-  const billId = document.getElementById('pay-bill').value;
+function submitPayment(editId) {
+  const editPay = editId ? db.payments.find(x => x.id === editId) : null;
+  const billId = editPay ? editPay.billId : document.getElementById('pay-bill').value;
   const date = document.getElementById('pay-date').value;
   const amount = +document.getElementById('pay-amt').value;
   const mode = document.getElementById('pay-mode').value;
@@ -2556,6 +2563,18 @@ function submitPayment() {
   if (!billId) { toast('Select a bill', 't-err'); return; }
   if (!date) { toast('Enter date', 't-err'); return; }
   if (!amount || amount <= 0) { toast('Enter a valid amount', 't-err'); return; }
+
+  if (editPay) {
+    Object.assign(editPay, { date, amount, mode, notes });
+    persistUpsert('payments', editPay);
+    recalcBill(billId); // re-total the bill from its payments
+    closeModal();
+    renderPayments();
+    renderDashboard();
+    toast('Payment updated');
+    return;
+  }
+
   const newPay = addPayment({ billId, date, amount, mode, notes });
   closeModal();
   renderPayments();
