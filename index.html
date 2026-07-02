@@ -348,6 +348,7 @@ th .sort-arrow { font-size: .625rem; margin-left: .25rem; color: var(--p); }
       <select id="bill-m" onchange="renderBilling()"></select>
       <select id="bill-y" onchange="renderBilling()"></select>
       <button class="btn btn-ok" onclick="openQuickEntry()">⚡ Quick Entry</button>
+      <button class="btn btn-sec" onclick="recomputeMonthBills()" title="Re-apply the current utility rates to this month's saved bills, using their existing meter readings">🔄 Recompute Rates</button>
       <button class="btn btn-out" onclick="printAllBills()">🖨 Print All</button>
       <button class="btn btn-p" onclick="generateAllBills()">💾 Save All Bills</button>
     </div>
@@ -1649,6 +1650,55 @@ function generateAllBills() {
   renderBilling();
   renderDashboard();
   toast(`${saved} bill(s) saved for ${perLabel(p)}`);
+}
+
+// Re-apply the CURRENT utility rates to this month's already-saved bills,
+// using each bill's stored meter readings — no need to re-enter anything.
+// Keeps meter readings, recorded payments, rent, and carried-over balances.
+function recomputeMonthBills() {
+  const p = getPer('bill-m', 'bill-y');
+  const s = db.settings;
+  const bills = db.bills.filter(b => b.period === p);
+  if (!bills.length) { toast(`No saved bills for ${perLabel(p)} to recompute`, 't-err'); return; }
+
+  // Preview the electricity impact before committing
+  let oldElec = 0, newElec = 0;
+  const preview = bills.map(b => {
+    const kWh = Math.max(0, (+b.currReading || 0) - (+b.prevReading || 0));
+    const ne = Math.round(kWh * s.electricity);
+    oldElec += (+b.electricity || 0);
+    newElec += ne;
+    return { b, kWh, ne };
+  });
+  const diff = newElec - oldElec;
+  const sign = diff >= 0 ? '+' : '−';
+
+  if (!confirm(
+    `Recompute ${bills.length} bill(s) for ${perLabel(p)} using current rates?\n\n` +
+    `Electricity rate: ₱${s.electricity}/kWh\n` +
+    `Total electricity: ${fmt(oldElec)} → ${fmt(newElec)}  (${sign}${fmt(Math.abs(diff))})\n\n` +
+    `Meter readings and recorded payments are kept. Rent and previous balances are unchanged.\n\n` +
+    `Note: if you've ALSO generated bills for months after ${perLabel(p)}, recompute those too (oldest first) so carried-over balances stay correct.`
+  )) return;
+
+  preview.forEach(({ b, kWh, ne }) => {
+    const room = getRoom(b.roomId);
+    const caretaker = room ? isCaretaker(room) : (+b.rent === 0 && +b.water === 0 && +b.wifi === 0);
+    const water = (!caretaker && +b.water > 0) ? Math.round((+b.persons || 1) * s.water) : 0;
+    const wifi  = (!caretaker && +b.wifi  > 0) ? s.wifi : 0;
+    const rent  = caretaker ? 0 : (+b.rent || 0);
+    const prevBalance = +b.prevBalance || 0;
+    const totalDue = rent + ne + water + wifi + prevBalance;
+    const balance = totalDue - (+b.paidAmount || 0);
+    Object.assign(b, {
+      kWh, electricity: ne, water, wifi, rent, totalDue, balance,
+      status: balance <= 0 ? 'paid' : (+b.paidAmount || 0) > 0 ? 'partial' : 'unpaid'
+    });
+    persistUpsert('bills', b);
+  });
+  renderBilling();
+  renderDashboard();
+  toast(`${bills.length} bill(s) recomputed for ${perLabel(p)}`);
 }
 
 // ======================== PAYMENTS RENDER ========================
