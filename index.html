@@ -1041,12 +1041,14 @@ function deletePayment(id) {
   recalcBill(p.billId); // persists the affected bill
   renderPayments();
   renderDashboard();
+  renderBilling();
   offerUndo(`Payment of ${fmt(p.amount)} deleted`, () => {
     db.payments.push(p);
     persistUpsert('payments', p);
     recalcBill(p.billId);
     renderPayments();
     renderDashboard();
+    renderBilling();
   });
 }
 
@@ -1576,7 +1578,18 @@ function renderBilling() {
           <button class="btn btn-p btn-sm" style="width:100%;margin-top:.75rem;justify-content:center" onclick="saveSingleBill('${r.id}')">
             💾 Save Bill
           </button>
-          ${existing ? `<div style="font-size:.75rem;color:var(--g500);text-align:center;margin-top:.375rem">Paid: ${fmt(existing.paidAmount)} | Balance: ${fmt(existing.balance)}</div>` : ''}
+          ${existing ? `<div style="font-size:.75rem;color:var(--g500);text-align:center;margin-top:.375rem">Paid: ${fmt(existing.paidAmount)} | Balance: ${fmt(existing.balance)}</div>
+          ${(() => {
+            const pays = db.payments.filter(pp => pp.billId === existing.id).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+            if (!pays.length) return '';
+            return `<div style="margin-top:.5rem;border-top:1px dashed var(--g200);padding-top:.375rem">
+              <div style="font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--g500);margin-bottom:.25rem">Payments</div>
+              ${pays.map(pp => `<div style="display:flex;justify-content:space-between;align-items:center;font-size:.75rem;padding:.1rem 0">
+                <span>${pp.date} · ${esc(pp.mode)} · <strong>${fmt(pp.amount)}</strong></span>
+                <button class="btn btn-err btn-sm" style="padding:.05rem .4rem;font-size:.7rem" title="Delete this payment" onclick="deletePayment('${pp.id}')">✕</button>
+              </div>`).join('')}
+            </div>`;
+          })()}` : ''}
         </div>
       </div>
     </div>`;
