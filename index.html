@@ -2068,23 +2068,27 @@ function toggleReportMode() {
 
 function renderYearReport() {
   const y = +document.getElementById('rep-y').value;
-  let tBilled = 0, tCollected = 0, tExp = 0;
+  let tBilled = 0, tCollected = 0, tExp = 0, tElec = 0, tWater = 0;
   const rows = MONTHS.map((name, m) => {
     const p = `${y}-${String(m + 1).padStart(2, '0')}`;
     const bills = db.bills.filter(b => b.period === p);
     const billIds = new Set(bills.map(b => b.id));
     const billed = bills.reduce((s, b) => s + (+b.totalDue || 0), 0);
+    const elec = bills.reduce((s, b) => s + (+b.electricity || 0), 0);
+    const water = bills.reduce((s, b) => s + (+b.water || 0), 0);
     const collected = db.payments.filter(x => billIds.has(x.billId)).reduce((s, x) => s + (+x.amount || 0), 0);
     const exp = db.expenses.filter(e => {
       const d = new Date(e.date + 'T00:00:00');
       return d.getFullYear() === y && d.getMonth() === m;
     }).reduce((s, e) => s + (+e.amount || 0), 0);
-    tBilled += billed; tCollected += collected; tExp += exp;
+    tBilled += billed; tCollected += collected; tExp += exp; tElec += elec; tWater += water;
     const net = collected - exp;
     if (!billed && !collected && !exp) return '';
     return `<tr>
       <td>${name}</td>
       <td style="text-align:right">${fmt(billed)}</td>
+      <td style="text-align:right">${fmt(elec)}</td>
+      <td style="text-align:right">${fmt(water)}</td>
       <td style="text-align:right;color:var(--ok)">${fmt(collected)}</td>
       <td style="text-align:right;color:var(--err)">${fmt(exp)}</td>
       <td style="text-align:right;font-weight:700;color:${net >= 0 ? 'var(--ok)' : 'var(--err)'}">${fmt(net)}</td>
@@ -2098,16 +2102,20 @@ function renderYearReport() {
       <div class="stat stat-green"><div class="stat-val">${fmt(tCollected)}</div><div class="stat-label">Collected in ${y}</div></div>
       <div class="stat stat-orange"><div class="stat-val">${fmt(tExp)}</div><div class="stat-label">Expenses in ${y}</div></div>
       <div class="stat ${tNet >= 0 ? 'stat-green' : 'stat-red'}"><div class="stat-val">${fmt(tNet)}</div><div class="stat-label">Net Income ${y}</div></div>
+      <div class="stat stat-orange"><div class="stat-val">${fmt(tElec)}</div><div class="stat-label">⚡ Electricity in ${y}</div></div>
+      <div class="stat stat-blue"><div class="stat-val">${fmt(tWater)}</div><div class="stat-label">💧 Water in ${y}</div></div>
     </div>
     <div class="card">
       <div class="card-header"><span class="card-title">📅 ${y} Month-by-Month</span></div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Month</th><th style="text-align:right">Billed</th><th style="text-align:right">Collected</th><th style="text-align:right">Expenses</th><th style="text-align:right">Net</th></tr></thead>
-          <tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:var(--g500)">No data for this year</td></tr>'}</tbody>
+          <thead><tr><th>Month</th><th style="text-align:right">Billed</th><th style="text-align:right">⚡ Electricity</th><th style="text-align:right">💧 Water</th><th style="text-align:right">Collected</th><th style="text-align:right">Expenses</th><th style="text-align:right">Net</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:var(--g500)">No data for this year</td></tr>'}</tbody>
           <tfoot><tr style="font-weight:700;border-top:2px solid var(--g300)">
             <td>TOTAL</td>
             <td style="text-align:right">${fmt(tBilled)}</td>
+            <td style="text-align:right">${fmt(tElec)}</td>
+            <td style="text-align:right">${fmt(tWater)}</td>
             <td style="text-align:right">${fmt(tCollected)}</td>
             <td style="text-align:right">${fmt(tExp)}</td>
             <td style="text-align:right;color:${tNet >= 0 ? 'var(--ok)' : 'var(--err)'}">${fmt(tNet)}</td>
