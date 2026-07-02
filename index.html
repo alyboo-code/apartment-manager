@@ -976,11 +976,12 @@ function computeBill(roomId, period, prevR, currR, persons, wifiOverride) {
   const wifi  = caretaker ? 0 : (wifiOverride !== undefined ? (wifiOverride ? s.wifi : 0) : (room.wifi ? s.wifi : 0));
   const prevBill    = getBill(roomId, prevPer(period));
   const prevBalance = prevBill ? prevBill.balance : 0;
-  const totalDue    = rent + electricity + water + wifi + prevBalance;
   const existing    = getBill(roomId, period);
+  const carryIn     = existing ? (+existing.carryIn || 0) : 0; // transferred/opening balance, preserved across recompute
+  const totalDue    = rent + electricity + water + wifi + prevBalance + carryIn;
   const paidAmount  = existing ? existing.paidAmount : 0;
   const balance     = totalDue - paidAmount;
-  return { roomId, period, rent, prevReading: +prevR || 0, currReading: +currR || 0, kWh, electricity, persons: +persons || 1, water, wifi, prevBalance, totalDue, paidAmount, balance, status: balance <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid' };
+  return { roomId, period, rent, prevReading: +prevR || 0, currReading: +currR || 0, kWh, electricity, persons: +persons || 1, water, wifi, prevBalance, carryIn, totalDue, paidAmount, balance, status: balance <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid' };
 }
 
 function saveBill(billData) {
@@ -1360,6 +1361,7 @@ function renderRooms() {
       <td>${statusBadge(r)}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-sec btn-sm" onclick="openRoomModal('${r.id}')">Edit</button>
+        ${roomOutstanding(r.id) > 0 ? `<button class="btn btn-out btn-sm" onclick="openTransferModal('${r.id}')" title="Move this room's unpaid balance to another room (tenant changed rooms)">⇄ Transfer</button>` : ''}
         ${roomStatus(r) === 'active' ? `<button class="btn btn-out btn-sm" onclick="openSettlementModal('${r.id}')" title="Compute deposit refund and mark moved out">📤 Settle</button>` : ''}
         <button class="btn btn-err btn-sm" onclick="deleteRoom('${r.id}')">Delete</button>
       </td>
@@ -1488,6 +1490,7 @@ function renderBilling() {
     const wifiCheck = existing ? (existing.wifi > 0) : r.wifi;
     const kWh = existing ? existing.kWh : 0;
     const prevBal = prevBill ? prevBill.balance : 0;
+    const carryIn = existing ? (+existing.carryIn || 0) : 0;
 
     rows += `
     <div class="card" id="bill-room-${r.id}">
@@ -1559,9 +1562,10 @@ function renderBilling() {
             <tr><td>Water</td><td style="text-align:right" id="s-water-${r.id}">${fmt(existing ? existing.water : +persons * db.settings.water)}</td></tr>
             <tr><td>WiFi</td><td style="text-align:right" id="s-wifi-${r.id}">${fmt(wifiCheck ? db.settings.wifi : 0)}</td></tr>`}
             <tr><td>Previous Balance</td><td style="text-align:right" style="color:var(--err)">${fmt(prevBal)}</td></tr>
+            ${carryIn > 0 ? `<tr><td style="color:#7e22ce">↳ Transferred Balance</td><td style="text-align:right;color:#7e22ce">${fmt(carryIn)}</td></tr>` : ''}
             <tr style="font-weight:700;border-top:2px solid #93c5fd">
               <td style="padding-top:.375rem">TOTAL DUE</td>
-              <td style="text-align:right;color:var(--p);font-size:1rem;padding-top:.375rem" id="s-total-${r.id}">${fmt(existing ? existing.totalDue : (isCaretaker(r) ? 0 : +r.rent + +persons * db.settings.water + (wifiCheck ? db.settings.wifi : 0)) + prevBal)}</td>
+              <td style="text-align:right;color:var(--p);font-size:1rem;padding-top:.375rem" id="s-total-${r.id}">${fmt(existing ? existing.totalDue : ((isCaretaker(r) ? 0 : +r.rent + +persons * db.settings.water + (wifiCheck ? db.settings.wifi : 0)) + prevBal + carryIn))}</td>
             </tr>
           </table>
           <button class="btn btn-p btn-sm" style="width:100%;margin-top:.75rem;justify-content:center" onclick="saveSingleBill('${r.id}')">
@@ -1600,7 +1604,9 @@ function updateBillRow(roomId) {
   const wifiAmt = caretaker ? 0 : (wifi ? db.settings.wifi : 0);
   const prevBill = getBill(roomId, prevPer(getPer('bill-m', 'bill-y')));
   const prevBal = prevBill ? prevBill.balance : 0;
-  const total = (caretaker ? 0 : +room.rent) + electricity + water + wifiAmt + prevBal;
+  const existB = getBill(roomId, getPer('bill-m', 'bill-y'));
+  const carryIn = existB ? (+existB.carryIn || 0) : 0;
+  const total = (caretaker ? 0 : +room.rent) + electricity + water + wifiAmt + prevBal + carryIn;
 
   document.getElementById('kwh-' + roomId).textContent = kWh;
   document.getElementById('elec-amt-' + roomId).textContent = fmt(electricity);
@@ -1688,7 +1694,8 @@ function recomputeMonthBills() {
     const wifi  = (!caretaker && +b.wifi  > 0) ? s.wifi : 0;
     const rent  = caretaker ? 0 : (+b.rent || 0);
     const prevBalance = +b.prevBalance || 0;
-    const totalDue = rent + ne + water + wifi + prevBalance;
+    const carryIn = +b.carryIn || 0;
+    const totalDue = rent + ne + water + wifi + prevBalance + carryIn;
     const balance = totalDue - (+b.paidAmount || 0);
     Object.assign(b, {
       kWh, electricity: ne, water, wifi, rent, totalDue, balance,
@@ -2492,6 +2499,98 @@ function confirmSettlement(roomId) {
   toast(`${r.tenant} marked as moved out — records preserved`);
 }
 
+// ======================== TRANSFER BALANCE (tenant changed rooms) ========================
+// A room's most recent bill holds its running (cumulative) balance.
+function roomLatestBill(roomId) {
+  return db.bills.filter(b => b.roomId === roomId).sort((a, b) => (b.period || '').localeCompare(a.period || ''))[0] || null;
+}
+function roomOutstanding(roomId) {
+  const b = roomLatestBill(roomId);
+  return b ? Math.max(0, +b.balance || 0) : 0;
+}
+// Re-total a bill from its stored components (+ carryIn) and refresh balance/status.
+function retotalBill(b) {
+  b.totalDue = (+b.rent || 0) + (+b.electricity || 0) + (+b.water || 0) + (+b.wifi || 0) + (+b.prevBalance || 0) + (+b.carryIn || 0);
+  b.balance = b.totalDue - (+b.paidAmount || 0);
+  b.status = b.balance <= 0 ? 'paid' : (+b.paidAmount || 0) > 0 ? 'partial' : 'unpaid';
+}
+
+function openTransferModal(sourceRoomId) {
+  const src = getRoom(sourceRoomId);
+  if (!src) return;
+  const owed = roomOutstanding(sourceRoomId);
+  if (owed <= 0) { toast('This room has no outstanding balance to transfer', 't-err'); return; }
+  const targets = db.rooms.filter(r => r.id !== sourceRoomId && roomStatus(r) === 'active')
+    .sort((a, b) => String(a.number).localeCompare(String(b.number), undefined, { numeric: true }));
+  if (!targets.length) { toast('No other active room to transfer the balance to', 't-err'); return; }
+
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">⇄ Transfer Balance — Room ${esc(src.number)}</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div style="font-size:.875rem;margin-bottom:.75rem"><strong>${esc(src.tenant)}</strong> currently owes <strong style="color:var(--err)">${fmt(owed)}</strong> on Room ${esc(src.number)}.</div>
+    <div class="frow">
+      <div class="fgrp"><label>Amount to transfer (₱)</label><input type="number" id="tr-amt" min="0" max="${owed}" value="${owed}"></div>
+      <div class="fgrp"><label>Transfer to room</label>
+        <select id="tr-target">
+          ${targets.map(r => `<option value="${r.id}">Room ${esc(r.number)} — ${esc(r.tenant)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:var(--r);padding:.625rem .875rem;font-size:.8125rem;color:#6b21a8;margin-bottom:.5rem">
+      This <strong>removes</strong> the amount from Room ${esc(src.number)} and <strong>adds</strong> it as a “Transferred Balance” on the new room's current bill. No money is recorded as collected — it's just moved.
+    </div>
+    <div style="font-size:.75rem;color:var(--g500);margin-bottom:.5rem">Tip: if the tenant fully left Room ${esc(src.number)}, also update that room (Edit → Status or reassign) afterwards.</div>
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="executeTransfer('${sourceRoomId}')">⇄ Transfer</button>
+    </div>
+  `);
+}
+
+function executeTransfer(sourceRoomId) {
+  const src = getRoom(sourceRoomId);
+  if (!src) return;
+  const amount = +document.getElementById('tr-amt').value || 0;
+  const targetId = document.getElementById('tr-target').value;
+  const target = getRoom(targetId);
+  const srcBill = roomLatestBill(sourceRoomId);
+  if (!amount || amount <= 0) { toast('Enter a valid amount', 't-err'); return; }
+  if (!target) { toast('Choose a room to transfer to', 't-err'); return; }
+  if (!srcBill || (+srcBill.balance || 0) <= 0) { toast('This room has no outstanding balance', 't-err'); return; }
+  if (amount > (+srcBill.balance || 0) + 0.01) { toast(`Amount can't exceed what Room ${src.number} owes (${fmt(srcBill.balance)})`, 't-err'); return; }
+
+  // Source: reduce its latest bill by a negative carry adjustment (survives recompute)
+  srcBill.carryIn = (+srcBill.carryIn || 0) - amount;
+  retotalBill(srcBill);
+  persistUpsert('bills', srcBill);
+
+  // Target: add the amount as a carried balance on its CURRENT-month bill (create if none yet)
+  const now = new Date();
+  const p = per(now.getFullYear(), now.getMonth());
+  let tBill = getBill(targetId, p);
+  if (tBill) {
+    tBill.carryIn = (+tBill.carryIn || 0) + amount;
+    retotalBill(tBill);
+    persistUpsert('bills', tBill);
+  } else {
+    tBill = {
+      id: uid(), roomId: targetId, period: p,
+      rent: 0, prevReading: 0, currReading: 0, kWh: 0, electricity: 0,
+      persons: +target.persons || 1, water: 0, wifi: 0, prevBalance: 0,
+      carryIn: amount, totalDue: amount, paidAmount: 0, balance: amount, status: 'unpaid',
+      tenantName: target.tenant, roomNumber: target.number, createdAt: Date.now()
+    };
+    db.bills.push(tBill);
+    persistUpsert('bills', tBill);
+  }
+
+  closeModal();
+  renderAll();
+  toast(`${fmt(amount)} transferred from Room ${src.number} to Room ${target.number}`);
+}
+
 // PAYMENT MODAL
 function openPaymentModal(billId = null, editId = null) {
   const editPay = editId ? db.payments.find(x => x.id === editId) : null;
@@ -2682,6 +2781,7 @@ function buildBillHTML(bill) {
         <tr><td>Water (${bill.persons} person${bill.persons > 1 ? 's' : ''} × ₱${db.settings.water})</td><td class="amt">${fmt(bill.water)}</td></tr>
         <tr><td>WiFi</td><td class="amt">${bill.wifi > 0 ? fmt(bill.wifi) : '—'}</td></tr>
         ${bill.prevBalance > 0 ? `<tr><td style="color:#dc2626">Previous Balance</td><td class="amt" style="color:#dc2626">${fmt(bill.prevBalance)}</td></tr>` : ''}
+        ${+bill.carryIn > 0 ? `<tr><td style="color:#7e22ce">Transferred Balance (from previous room)</td><td class="amt" style="color:#7e22ce">${fmt(bill.carryIn)}</td></tr>` : ''}
       </table>
       <div class="bp-total">
         <span>TOTAL DUE</span>
