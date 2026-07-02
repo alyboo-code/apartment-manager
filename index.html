@@ -978,10 +978,12 @@ function computeBill(roomId, period, prevR, currR, persons, wifiOverride) {
   const prevBalance = prevBill ? prevBill.balance : 0;
   const existing    = getBill(roomId, period);
   const carryIn     = existing ? (+existing.carryIn || 0) : 0; // transferred/opening balance, preserved across recompute
-  const totalDue    = rent + electricity + water + wifi + prevBalance + carryIn;
+  const extras      = existing && Array.isArray(existing.extras) ? existing.extras : []; // manual extra charges, preserved
+  const extrasTotal = extras.reduce((s, e) => s + (+e.amount || 0), 0);
+  const totalDue    = rent + electricity + water + wifi + prevBalance + carryIn + extrasTotal;
   const paidAmount  = existing ? existing.paidAmount : 0;
   const balance     = totalDue - paidAmount;
-  return { roomId, period, rent, prevReading: +prevR || 0, currReading: +currR || 0, kWh, electricity, persons: +persons || 1, water, wifi, prevBalance, carryIn, totalDue, paidAmount, balance, status: balance <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid' };
+  return { roomId, period, rent, prevReading: +prevR || 0, currReading: +currR || 0, kWh, electricity, persons: +persons || 1, water, wifi, prevBalance, carryIn, extras, totalDue, paidAmount, balance, status: balance <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid' };
 }
 
 function saveBill(billData) {
@@ -1491,6 +1493,7 @@ function renderBilling() {
     const kWh = existing ? existing.kWh : 0;
     const prevBal = prevBill ? prevBill.balance : 0;
     const carryIn = existing ? (+existing.carryIn || 0) : 0;
+    const extras = existing && Array.isArray(existing.extras) ? existing.extras : [];
 
     rows += `
     <div class="card" id="bill-room-${r.id}">
@@ -1505,6 +1508,7 @@ function renderBilling() {
         </div>
         <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
           ${existing ? `<button class="btn btn-out btn-sm" onclick="printBill('${existing.id}')">🖨 Print Bill</button>` : ''}
+          ${existing ? `<button class="btn btn-sec btn-sm" onclick="openChargeModal('${r.id}')" title="Add a one-off charge (repair, late fee, damage, etc.)">➕ Charge</button>` : ''}
           ${existing && existing.balance > 0 ? `<button class="btn btn-ok btn-sm" onclick="openPaymentModal('${existing.id}')">💰 Record Payment</button>` : ''}
           ${existing ? `<button class="btn btn-sec btn-sm" onclick="resetBill('${r.id}','${p}')" title="Clear this bill and re-enter readings">🔄 Reset</button>` : ''}
         </div>
@@ -1563,6 +1567,7 @@ function renderBilling() {
             <tr><td>WiFi</td><td style="text-align:right" id="s-wifi-${r.id}">${fmt(wifiCheck ? db.settings.wifi : 0)}</td></tr>`}
             <tr><td>Previous Balance</td><td style="text-align:right" style="color:var(--err)">${fmt(prevBal)}</td></tr>
             ${carryIn > 0 ? `<tr><td style="color:#7e22ce">↳ Transferred Balance</td><td style="text-align:right;color:#7e22ce">${fmt(carryIn)}</td></tr>` : ''}
+            ${extras.map(e => `<tr><td style="color:var(--warn)">➕ ${esc(e.label)}</td><td style="text-align:right;color:var(--warn)">${fmt(e.amount)}</td></tr>`).join('')}
             <tr style="font-weight:700;border-top:2px solid #93c5fd">
               <td style="padding-top:.375rem">TOTAL DUE</td>
               <td style="text-align:right;color:var(--p);font-size:1rem;padding-top:.375rem" id="s-total-${r.id}">${fmt(existing ? existing.totalDue : ((isCaretaker(r) ? 0 : +r.rent + +persons * db.settings.water + (wifiCheck ? db.settings.wifi : 0)) + prevBal + carryIn))}</td>
@@ -1606,7 +1611,8 @@ function updateBillRow(roomId) {
   const prevBal = prevBill ? prevBill.balance : 0;
   const existB = getBill(roomId, getPer('bill-m', 'bill-y'));
   const carryIn = existB ? (+existB.carryIn || 0) : 0;
-  const total = (caretaker ? 0 : +room.rent) + electricity + water + wifiAmt + prevBal + carryIn;
+  const extrasTotal = existB && Array.isArray(existB.extras) ? existB.extras.reduce((s, e) => s + (+e.amount || 0), 0) : 0;
+  const total = (caretaker ? 0 : +room.rent) + electricity + water + wifiAmt + prevBal + carryIn + extrasTotal;
 
   document.getElementById('kwh-' + roomId).textContent = kWh;
   document.getElementById('elec-amt-' + roomId).textContent = fmt(electricity);
@@ -1695,7 +1701,8 @@ function recomputeMonthBills() {
     const rent  = caretaker ? 0 : (+b.rent || 0);
     const prevBalance = +b.prevBalance || 0;
     const carryIn = +b.carryIn || 0;
-    const totalDue = rent + ne + water + wifi + prevBalance + carryIn;
+    const extrasTotal = (Array.isArray(b.extras) ? b.extras : []).reduce((s, e) => s + (+e.amount || 0), 0);
+    const totalDue = rent + ne + water + wifi + prevBalance + carryIn + extrasTotal;
     const balance = totalDue - (+b.paidAmount || 0);
     Object.assign(b, {
       kWh, electricity: ne, water, wifi, rent, totalDue, balance,
@@ -1706,6 +1713,66 @@ function recomputeMonthBills() {
   renderBilling();
   renderDashboard();
   toast(`${bills.length} bill(s) recomputed for ${perLabel(p)}`);
+}
+
+// ======================== EXTRA CHARGES (repairs, fees, etc.) ========================
+// Manage one-off named charges on a specific room's bill for the selected month.
+function openChargeModal(roomId) {
+  const p = getPer('bill-m', 'bill-y');
+  const bill = getBill(roomId, p);
+  const room = getRoom(roomId);
+  if (!bill) { toast('Save this bill first, then add charges', 't-err'); return; }
+  const extras = Array.isArray(bill.extras) ? bill.extras : [];
+  const rowHtml = (label, amount) => `
+    <div class="frow charge-row" style="align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <div class="fgrp" style="margin:0"><input class="charge-label" value="${escAttr(label || '')}" placeholder="e.g. Repair, Late fee, Damage"></div>
+      <div class="fgrp" style="margin:0;max-width:130px"><input class="charge-amt" type="number" value="${amount != null ? amount : ''}" placeholder="₱0.00"></div>
+      <button class="btn btn-err btn-sm" onclick="this.closest('.charge-row').remove()" title="Remove">✕</button>
+    </div>`;
+  openModal(`
+    <div class="modal-hdr">
+      <span class="modal-title">➕ Extra Charges — Room ${esc(room.number)} · ${perLabel(p)}</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="charge-list">${extras.length ? extras.map(e => rowHtml(e.label, e.amount)).join('') : rowHtml('', '')}</div>
+    <button class="btn btn-sec btn-sm" onclick="addChargeRow()">+ Add another charge</button>
+    <div style="font-size:.8125rem;color:var(--g500);margin:.5rem 0">These are added on top of rent/utilities in this month's Total Due, and show on the printed bill.</div>
+    <div class="modal-ftr">
+      <button class="btn btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="saveCharges('${roomId}')">Save Charges</button>
+    </div>
+  `);
+}
+
+function addChargeRow() {
+  const list = document.getElementById('charge-list');
+  const div = document.createElement('div');
+  div.className = 'frow charge-row';
+  div.style.cssText = 'align-items:center;gap:.5rem;margin-bottom:.5rem';
+  div.innerHTML = `
+    <div class="fgrp" style="margin:0"><input class="charge-label" placeholder="e.g. Repair, Late fee, Damage"></div>
+    <div class="fgrp" style="margin:0;max-width:130px"><input class="charge-amt" type="number" placeholder="₱0.00"></div>
+    <button class="btn btn-err btn-sm" onclick="this.closest('.charge-row').remove()" title="Remove">✕</button>`;
+  list.appendChild(div);
+}
+
+function saveCharges(roomId) {
+  const p = getPer('bill-m', 'bill-y');
+  const bill = getBill(roomId, p);
+  if (!bill) { toast('Bill not found', 't-err'); return; }
+  const extras = [];
+  document.querySelectorAll('#charge-list .charge-row').forEach(row => {
+    const label = row.querySelector('.charge-label').value.trim();
+    const amount = +row.querySelector('.charge-amt').value || 0;
+    if (label && amount) extras.push({ label, amount });
+  });
+  bill.extras = extras;
+  retotalBill(bill); // includes extras
+  persistUpsert('bills', bill);
+  closeModal();
+  renderBilling();
+  renderDashboard();
+  toast(extras.length ? 'Charges saved' : 'Charges cleared');
 }
 
 // ======================== PAYMENTS RENDER ========================
@@ -2508,9 +2575,10 @@ function roomOutstanding(roomId) {
   const b = roomLatestBill(roomId);
   return b ? Math.max(0, +b.balance || 0) : 0;
 }
-// Re-total a bill from its stored components (+ carryIn) and refresh balance/status.
+// Re-total a bill from its stored components (+ carryIn + extras) and refresh balance/status.
 function retotalBill(b) {
-  b.totalDue = (+b.rent || 0) + (+b.electricity || 0) + (+b.water || 0) + (+b.wifi || 0) + (+b.prevBalance || 0) + (+b.carryIn || 0);
+  const extrasTotal = (Array.isArray(b.extras) ? b.extras : []).reduce((s, e) => s + (+e.amount || 0), 0);
+  b.totalDue = (+b.rent || 0) + (+b.electricity || 0) + (+b.water || 0) + (+b.wifi || 0) + (+b.prevBalance || 0) + (+b.carryIn || 0) + extrasTotal;
   b.balance = b.totalDue - (+b.paidAmount || 0);
   b.status = b.balance <= 0 ? 'paid' : (+b.paidAmount || 0) > 0 ? 'partial' : 'unpaid';
 }
@@ -2782,6 +2850,7 @@ function buildBillHTML(bill) {
         <tr><td>WiFi</td><td class="amt">${bill.wifi > 0 ? fmt(bill.wifi) : '—'}</td></tr>
         ${bill.prevBalance > 0 ? `<tr><td style="color:#dc2626">Previous Balance</td><td class="amt" style="color:#dc2626">${fmt(bill.prevBalance)}</td></tr>` : ''}
         ${+bill.carryIn > 0 ? `<tr><td style="color:#7e22ce">Transferred Balance (from previous room)</td><td class="amt" style="color:#7e22ce">${fmt(bill.carryIn)}</td></tr>` : ''}
+        ${(Array.isArray(bill.extras) ? bill.extras : []).map(e => `<tr><td>${esc(e.label)}</td><td class="amt">${fmt(e.amount)}</td></tr>`).join('')}
       </table>
       <div class="bp-total">
         <span>TOTAL DUE</span>

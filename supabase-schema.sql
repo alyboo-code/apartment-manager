@@ -57,6 +57,7 @@ alter table public.bills add column if not exists water         numeric default 
 alter table public.bills add column if not exists wifi          numeric default 0;
 alter table public.bills add column if not exists "prevBalance" numeric default 0;
 alter table public.bills add column if not exists "carryIn"     numeric default 0;
+alter table public.bills add column if not exists extras        jsonb   default '[]';
 alter table public.bills add column if not exists "totalDue"    numeric default 0;
 alter table public.bills add column if not exists "paidAmount"  numeric default 0;
 alter table public.bills add column if not exists balance       numeric default 0;
