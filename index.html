@@ -964,12 +964,24 @@ function getBill(roomId, period) {
   return db.bills.find(b => b.roomId === roomId && b.period === period);
 }
 
+// Electricity rate (₱/kWh) effective for a given "YYYY-MM" period. Supports
+// rate changes over time (e.g. ₱17 up to May 2026, ₱19 from June 2026) so old
+// months keep their old rate. Falls back to the single settings.electricity
+// when no rate history is configured.
+function elecRateFor(period) {
+  const hist = (db.settings.electricityRates || []).filter(h => h && h.from).slice().sort((a, b) => a.from.localeCompare(b.from));
+  if (!hist.length) return +db.settings.electricity || 0;
+  let rate = +hist[0].rate || 0; // periods before the first breakpoint use the earliest rate
+  for (const h of hist) if (h.from <= period) rate = +h.rate || 0;
+  return rate;
+}
+
 function computeBill(roomId, period, prevR, currR, persons, wifiOverride) {
   const room = getRoom(roomId);
   if (!room) return null;
   const s = db.settings;
   const kWh = Math.max(0, (+currR || 0) - (+prevR || 0));
-  const electricity = Math.round(kWh * s.electricity);
+  const electricity = Math.round(kWh * elecRateFor(period));
   const caretaker = isCaretaker(room);
   const rent  = caretaker ? 0 : (+room.rent || 0);
   const water = caretaker ? 0 : Math.round((+persons || 1) * s.water);
@@ -1527,7 +1539,7 @@ function renderBilling() {
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem">
         <!-- Electricity -->
         <div style="background:var(--g50);border-radius:var(--r);padding:1rem;border:1px solid var(--g200)">
-          <div style="font-weight:600;margin-bottom:.75rem;font-size:.875rem">⚡ Electricity (₱${db.settings.electricity}/kWh)</div>
+          <div style="font-weight:600;margin-bottom:.75rem;font-size:.875rem">⚡ Electricity (₱${elecRateFor(p)}/kWh)</div>
           <div class="fgrp">
             <label>Previous Reading</label>
             <input type="number" class="bi-lg" id="prev-${r.id}" value="${prevReading}" placeholder="Enter reading" oninput="updateBillRow('${r.id}')" style="width:100%">
@@ -1631,7 +1643,7 @@ function updateBillRow(roomId) {
       warnEl.textContent = '';
     }
   }
-  const electricity = Math.round(kWh * db.settings.electricity);
+  const electricity = Math.round(kWh * elecRateFor(getPer('bill-m', 'bill-y')));
   const water = caretaker ? 0 : Math.round(persons * db.settings.water);
   const wifiAmt = caretaker ? 0 : (wifi ? db.settings.wifi : 0);
   const prevBill = getBill(roomId, prevPer(getPer('bill-m', 'bill-y')));
@@ -1704,7 +1716,7 @@ function recomputeMonthBills() {
   let oldElec = 0, newElec = 0;
   const preview = bills.map(b => {
     const kWh = Math.max(0, (+b.currReading || 0) - (+b.prevReading || 0));
-    const ne = Math.round(kWh * s.electricity);
+    const ne = Math.round(kWh * elecRateFor(b.period));
     oldElec += (+b.electricity || 0);
     newElec += ne;
     return { b, kWh, ne };
@@ -2817,15 +2829,43 @@ function submitExpense(id) {
 }
 
 // SETTINGS MODAL
+// One editable row of the electricity rate history: rate + the month it took effect.
+function elecRateRowHtml(rate, from) {
+  const [fy, fm] = (from || '').split('-');
+  const cy = new Date().getFullYear();
+  const monthOpts = MONTHS.map((n, i) => `<option value="${i}" ${(+fm - 1) === i ? 'selected' : ''}>${n}</option>`).join('');
+  let yearOpts = '';
+  for (let y = 2024; y <= cy + 1; y++) yearOpts += `<option value="${y}" ${(+fy) === y ? 'selected' : ''}>${y}</option>`;
+  return `<div class="frow elec-rate-row" style="align-items:center;gap:.4rem;margin-bottom:.4rem">
+    <div class="fgrp" style="margin:0;max-width:90px"><input type="number" class="er-rate" value="${rate != null && rate !== '' ? rate : ''}" placeholder="₱/kWh"></div>
+    <span style="font-size:.8125rem;color:var(--g500)">from</span>
+    <div class="fgrp" style="margin:0"><select class="er-month">${monthOpts}</select></div>
+    <div class="fgrp" style="margin:0;max-width:90px"><select class="er-year">${yearOpts}</select></div>
+    <button type="button" class="btn btn-err btn-sm" title="Remove" onclick="this.closest('.elec-rate-row').remove()">✕</button>
+  </div>`;
+}
+function addElecRateRow() {
+  const list = document.getElementById('elec-rate-list');
+  list.insertAdjacentHTML('beforeend', elecRateRowHtml('', ''));
+}
+
 function showSettingsModal() {
   const s = db.settings;
+  const rates = (s.electricityRates && s.electricityRates.length)
+    ? s.electricityRates.slice().sort((a, b) => (a.from || '').localeCompare(b.from || ''))
+    : [{ rate: s.electricity, from: '' }];
   openModal(`
     <div class="modal-hdr">
       <span class="modal-title">⚙ Utility Rates & Settings</span>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="fgrp"><label>Property / Apartment Name</label><input id="set-name" value="${escAttr(s.name || '')}"></div>
-    <div class="fgrp"><label>⚡ Electricity Rate (₱ per kWh)</label><input type="number" id="set-elec" value="${s.electricity}"></div>
+    <div class="fgrp">
+      <label>⚡ Electricity Rate (₱ per kWh)</label>
+      <div id="elec-rate-list">${rates.map(r => elecRateRowHtml(r.rate, r.from)).join('')}</div>
+      <button type="button" class="btn btn-sec btn-sm" onclick="addElecRateRow()" style="margin-top:.25rem">+ Add rate change</button>
+      <div style="font-size:.75rem;color:var(--g500);margin-top:.3rem">Set the rate and the month it took effect. Add a row for each change — earlier months keep their earlier rate (e.g. ₱17 from Jan 2026, then ₱19 from Jun 2026).</div>
+    </div>
     <div class="fgrp"><label>💧 Water Rate (₱ per person)</label><input type="number" id="set-water" value="${s.water}"></div>
     <div class="fgrp"><label>📶 WiFi Rate (₱ per room/month) — charged to tenants</label><input type="number" id="set-wifi" value="${s.wifi}"></div>
     <div class="fgrp"><label>📶 WiFi Subscription (₱/month) — your actual bill to ISP</label><input type="number" id="set-wifi-sub" value="${s.wifiSubscription || 0}" placeholder="e.g. 1299"></div>
@@ -2838,7 +2878,17 @@ function showSettingsModal() {
 
 function saveSettings() {
   db.settings.name = document.getElementById('set-name').value.trim() || 'My Apartment';
-  db.settings.electricity = +document.getElementById('set-elec').value || 17;
+  // Electricity: collect the effective-dated rate rows
+  const rates = [];
+  document.querySelectorAll('#elec-rate-list .elec-rate-row').forEach(row => {
+    const rate = +row.querySelector('.er-rate').value;
+    const m = +row.querySelector('.er-month').value;
+    const y = +row.querySelector('.er-year').value;
+    if (rate > 0 && y) rates.push({ from: `${y}-${String(m + 1).padStart(2, '0')}`, rate });
+  });
+  rates.sort((a, b) => a.from.localeCompare(b.from));
+  db.settings.electricityRates = rates;
+  db.settings.electricity = rates.length ? rates[rates.length - 1].rate : (+db.settings.electricity || 17); // current = latest, for fallback/display
   db.settings.water = +document.getElementById('set-water').value || 150;
   db.settings.wifi = +document.getElementById('set-wifi').value || 300;
   db.settings.wifiSubscription = +document.getElementById('set-wifi-sub').value || 0;
@@ -2872,7 +2922,7 @@ function buildBillHTML(bill) {
       </div>
       <table class="bp-table">
         <tr><td>Monthly Rent</td><td class="amt">${fmt(bill.rent)}</td></tr>
-        <tr><td>Electricity (${bill.prevReading} → ${bill.currReading} = ${bill.kWh} kWh × ₱${db.settings.electricity})</td><td class="amt">${fmt(bill.electricity)}</td></tr>
+        <tr><td>Electricity (${bill.prevReading} → ${bill.currReading} = ${bill.kWh} kWh × ₱${elecRateFor(bill.period)})</td><td class="amt">${fmt(bill.electricity)}</td></tr>
         <tr><td>Water (${bill.persons} person${bill.persons > 1 ? 's' : ''} × ₱${db.settings.water})</td><td class="amt">${fmt(bill.water)}</td></tr>
         <tr><td>WiFi</td><td class="amt">${bill.wifi > 0 ? fmt(bill.wifi) : '—'}</td></tr>
         ${bill.prevBalance > 0 ? `<tr><td style="color:#dc2626">Previous Balance</td><td class="amt" style="color:#dc2626">${fmt(bill.prevBalance)}</td></tr>` : ''}
@@ -3148,7 +3198,7 @@ function qeCalc(roomId) {
   if (curr < prev) { totalEl.textContent = '—'; brkEl.textContent = ''; warnEl.textContent = '⚠ < prev'; qeGrand(); return; }
 
   const kWh     = curr - prev;
-  const elec    = Math.round(kWh * db.settings.electricity);
+  const elec    = Math.round(kWh * elecRateFor(getPer('bill-m', 'bill-y')));
   const water   = caretaker ? 0 : Math.round(persons * db.settings.water);
   const wifiAmt = caretaker ? 0 : (wifiOn ? db.settings.wifi : 0);
   const prevBill = getBill(roomId, prevPer(p));
