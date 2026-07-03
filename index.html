@@ -3053,9 +3053,11 @@ function printStatement(roomId) {
     const newCharges = b.totalDue - (b.prevBalance || 0);
     totalCharged += newCharges;
     running += newCharges;
+    const carryDesc = (+b.carryIn > 0) ? `, Transferred balance ${fmt(b.carryIn)}` : '';
+    const extrasDesc = (Array.isArray(b.extras) ? b.extras : []).map(e => `, ${esc(e.label)} ${fmt(e.amount)}`).join('');
     rows += `<tr>
       <td>${perLabel(b.period)}</td>
-      <td>Bill — Rent ${fmt(b.rent)}, Elec ${fmt(b.electricity)}, Water ${fmt(b.water)}${b.wifi > 0 ? ', WiFi ' + fmt(b.wifi) : ''}</td>
+      <td>Bill — Rent ${fmt(b.rent)}, Elec ${fmt(b.electricity)}, Water ${fmt(b.water)}${b.wifi > 0 ? ', WiFi ' + fmt(b.wifi) : ''}${carryDesc}${extrasDesc}</td>
       <td class="amt">${fmt(newCharges)}</td>
       <td class="amt"></td>
       <td class="amt">${fmt(running)}</td>
