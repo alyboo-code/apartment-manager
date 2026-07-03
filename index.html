@@ -1498,7 +1498,8 @@ function renderBilling() {
   const p = getPer('bill-m', 'bill-y');
   // Active rooms always show; moved-out or inactive rooms still show for
   // months where they have a saved bill, so past records are never hidden.
-  const rooms = db.rooms.filter(r => roomStatus(r) === 'active' || getBill(r.id, p));
+  const rooms = db.rooms.filter(r => roomStatus(r) === 'active' || getBill(r.id, p))
+    .sort((a, b) => String(a.number).localeCompare(String(b.number), undefined, { numeric: true }));
   const content = document.getElementById('billing-content');
 
   if (!rooms.length) {
