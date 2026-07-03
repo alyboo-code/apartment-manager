@@ -150,12 +150,16 @@ th .sort-arrow { font-size: .625rem; margin-left: .25rem; color: var(--p); }
 /* PRINT */
 #print-area { display: none; }
 @media print {
+  /* Default: show only the #print-area (bills, receipts, statements, sheets) */
   body > *:not(#print-area) { display: none !important; }
   #print-area { display: block !important; }
   .bill-print { max-width: 100%; }
-  /* Bill sheet print mode */
-  body.printing-billsheet > *:not(main) { display: none !important; }
+  /* Bill sheet print mode: reveal the on-screen bill sheet instead. #app-root
+     wraps the app, so un-hide it and trim it down to just the bill-sheet tab. */
   body.printing-billsheet #print-area { display: none !important; }
+  body.printing-billsheet #app-root { display: block !important; }
+  body.printing-billsheet #app-root > header,
+  body.printing-billsheet #app-root > nav { display: none !important; }
   body.printing-billsheet main > section { display: none !important; }
   body.printing-billsheet main > #tab-billsheet { display: block !important; }
   body.printing-billsheet .sec-hdr { display: none !important; }
@@ -525,9 +529,6 @@ th .sort-arrow { font-size: .625rem; margin-left: .25rem; color: var(--p); }
 <div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
   <div class="modal" id="modal-box"></div>
 </div>
-
-<!-- PRINT AREA -->
-<div id="print-area"></div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -4272,5 +4273,9 @@ async function init() {
 window.addEventListener('DOMContentLoaded', init);
 </script>
 </div><!-- end app-root -->
+
+<!-- PRINT AREA — must be a direct child of <body> so the print CSS
+     (which hides everything except #print-area) can show it -->
+<div id="print-area"></div>
 </body>
 </html>
