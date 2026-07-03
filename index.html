@@ -976,19 +976,23 @@ function elecRateFor(period) {
   return rate;
 }
 
-function computeBill(roomId, period, prevR, currR, persons, wifiOverride) {
+function computeBill(roomId, period, prevR, currR, persons, wifiOverride, away) {
   const room = getRoom(roomId);
   if (!room) return null;
   const s = db.settings;
+  const caretaker   = isCaretaker(room);
+  const existing    = getBill(roomId, period);
+  // "Away" = tenant gone this month → no water/WiFi. Signalled by water=0 on a
+  // regular room (no other case does that), so no extra DB column is needed.
+  // Falls back to the saved state when not explicitly passed (quick-entry re-save).
+  const awayFlag    = (away !== undefined) ? !!away : (!!existing && !caretaker && (+existing.water === 0));
   const kWh = Math.max(0, (+currR || 0) - (+prevR || 0));
   const electricity = Math.round(kWh * elecRateFor(period));
-  const caretaker = isCaretaker(room);
   const rent  = caretaker ? 0 : (+room.rent || 0);
-  const water = caretaker ? 0 : Math.round((+persons || 1) * s.water);
-  const wifi  = caretaker ? 0 : (wifiOverride !== undefined ? (wifiOverride ? s.wifi : 0) : (room.wifi ? s.wifi : 0));
+  const water = (caretaker || awayFlag) ? 0 : Math.round((+persons || 1) * s.water);
+  const wifi  = (caretaker || awayFlag) ? 0 : (wifiOverride !== undefined ? (wifiOverride ? s.wifi : 0) : (room.wifi ? s.wifi : 0));
   const prevBill    = getBill(roomId, prevPer(period));
   const prevBalance = prevBill ? prevBill.balance : 0;
-  const existing    = getBill(roomId, period);
   const carryIn     = existing ? (+existing.carryIn || 0) : 0; // transferred/opening balance, preserved across recompute
   const extras      = existing && Array.isArray(existing.extras) ? existing.extras : []; // manual extra charges, preserved
   const extrasTotal = extras.reduce((s, e) => s + (+e.amount || 0), 0);
@@ -1512,6 +1516,7 @@ function renderBilling() {
     const prevMissing = !prevFromBill && prevBill; // prevBill exists but had 0 currReading = was saved blank
     const currReading = existing && existing.currReading > 0 ? existing.currReading : '';
     const persons = existing ? existing.persons : r.persons;
+    const awayCheck = existing ? (!isCaretaker(r) && +existing.water === 0) : false;
     const wifiCheck = existing ? (existing.wifi > 0) : r.wifi;
     const kWh = existing ? existing.kWh : 0;
     const prevBal = prevBill ? prevBill.balance : 0;
@@ -1578,6 +1583,10 @@ function renderBilling() {
           <div style="font-size:.875rem;margin-top:.5rem">
             WiFi Amount: <strong id="wifi-amt-${r.id}">${fmt(wifiCheck ? db.settings.wifi : 0)}</strong>
           </div>
+          <div class="fcheck" style="margin-top:.625rem;padding-top:.5rem;border-top:1px dashed var(--g200)">
+            <input type="checkbox" id="away-${r.id}" ${awayCheck ? 'checked' : ''} onchange="updateBillRow('${r.id}')">
+            <label for="away-${r.id}">🚶 Tenant away this month — no water &amp; WiFi</label>
+          </div>
         </div>`}
         <!-- Summary -->
         <div style="background:#eff6ff;border-radius:var(--r);padding:1rem;border:1px solid #bfdbfe">
@@ -1630,7 +1639,8 @@ function updateBillRow(roomId) {
   const prev = +document.getElementById('prev-' + roomId).value || 0;
   const curr = +document.getElementById('curr-' + roomId).value || 0;
   const persons = caretaker ? 1 : (+document.getElementById('persons-' + roomId).value || 1);
-  const wifi = caretaker ? false : document.getElementById('wifi-' + roomId).checked;
+  const away = caretaker ? false : !!(document.getElementById('away-' + roomId) && document.getElementById('away-' + roomId).checked);
+  const wifi = (caretaker || away) ? false : document.getElementById('wifi-' + roomId).checked;
 
   const kWh = Math.max(0, curr - prev);
   const warnEl = document.getElementById('meterwarn-' + roomId);
@@ -1644,8 +1654,8 @@ function updateBillRow(roomId) {
     }
   }
   const electricity = Math.round(kWh * elecRateFor(getPer('bill-m', 'bill-y')));
-  const water = caretaker ? 0 : Math.round(persons * db.settings.water);
-  const wifiAmt = caretaker ? 0 : (wifi ? db.settings.wifi : 0);
+  const water = (caretaker || away) ? 0 : Math.round(persons * db.settings.water);
+  const wifiAmt = (caretaker || away) ? 0 : (wifi ? db.settings.wifi : 0);
   const prevBill = getBill(roomId, prevPer(getPer('bill-m', 'bill-y')));
   const prevBal = prevBill ? prevBill.balance : 0;
   const existB = getBill(roomId, getPer('bill-m', 'bill-y'));
@@ -1673,8 +1683,9 @@ function saveSingleBill(roomId) {
   if (!curr && curr !== 0) { toast('Enter the current meter reading first', 't-err'); return; }
   if (+curr < prev) { toast('Current reading cannot be less than previous reading', 't-err'); return; }
   const persons = caretaker ? 1 : (+document.getElementById('persons-' + roomId).value || 1);
-  const wifi = caretaker ? false : document.getElementById('wifi-' + roomId).checked;
-  const billData = computeBill(roomId, p, prev, curr, persons, wifi);
+  const away = caretaker ? false : !!(document.getElementById('away-' + roomId) && document.getElementById('away-' + roomId).checked);
+  const wifi = (caretaker || away) ? false : document.getElementById('wifi-' + roomId).checked;
+  const billData = computeBill(roomId, p, prev, curr, persons, wifi, away);
   saveBill(billData);
   renderBilling();
   renderDashboard();
@@ -1692,8 +1703,10 @@ function generateAllBills() {
     const prev = +document.getElementById('prev-' + r.id).value || 0;
     if (curr < prev) { skipped.push(r.number); return; }
     const persons = +document.getElementById('persons-' + r.id).value || r.persons;
-    const wifi = document.getElementById('wifi-' + r.id).checked;
-    saveBill(computeBill(r.id, p, prev, curr, persons, wifi));
+    const awayEl = document.getElementById('away-' + r.id);
+    const away = !!(awayEl && awayEl.checked);
+    const wifi = away ? false : document.getElementById('wifi-' + r.id).checked;
+    saveBill(computeBill(r.id, p, prev, curr, persons, wifi, away));
     saved++;
   });
   if (skipped.length) toast(`Skipped Room ${skipped.join(', ')} — current reading lower than previous`, 't-err');
@@ -2781,12 +2794,12 @@ function submitPayment(editId) {
     return;
   }
 
-  const newPay = addPayment({ billId, date, amount, mode, notes });
+  addPayment({ billId, date, amount, mode, notes });
   closeModal();
   renderPayments();
   renderDashboard();
+  renderBilling();
   toast(`Payment of ${fmt(amount)} recorded`);
-  if (newPay && confirm('Payment recorded. Print a receipt for the tenant?')) printReceipt(newPay.id);
 }
 
 // EXPENSE MODAL
