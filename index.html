@@ -330,7 +330,7 @@ th .sort-arrow { font-size: .625rem; margin-left: .25rem; color: var(--p); }
   <div class="sec-hdr">
     <div class="sec-title">Tenant Contact Sheet</div>
     <div style="display:flex;gap:.5rem">
-      <button class="btn btn-sec" onclick="window.print()">🖨 Print Sheet</button>
+      <button class="btn btn-sec" onclick="printTenantSheet()">🖨 Print Sheet</button>
       <button class="btn btn-p" onclick="openRoomModal()">+ Add Tenant</button>
     </div>
   </div>
@@ -3114,6 +3114,44 @@ function printStatement(roomId) {
         This statement reflects all recorded bills and payments as of the statement date.<br>
         Generated ${new Date().toLocaleString('en-PH')}
       </div>
+    </div>
+  `;
+  window.print();
+}
+
+// Printable contact sheet of all tenants (into #print-area, so it isn't blank).
+function printTenantSheet() {
+  const rooms = db.rooms.slice().sort((a, b) => String(a.number).localeCompare(String(b.number), undefined, { numeric: true }));
+  if (!rooms.length) { toast('No tenants to print', 't-err'); return; }
+  const row = r => {
+    const dep = (+r.deposit || 0) + (+r.advance || 0);
+    const ec = r.ecName ? `${esc(r.ecName)}${r.ecRel ? ' (' + esc(r.ecRel) + ')' : ''}${r.ecPhone ? ' · ' + esc(r.ecPhone) : ''}` : '—';
+    const moveIn = r.moveIn ? new Date(r.moveIn + 'T00:00:00').toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+    const past = roomStatus(r) !== 'active';
+    return `<tr${past ? ' style="color:#888"' : ''}>
+      <td>${esc(r.number)}</td>
+      <td>${esc(r.tenant)}${past ? ' (' + roomStatus(r) + ')' : ''}</td>
+      <td>${esc(r.phone || '—')}</td>
+      <td>${esc(r.email || '—')}</td>
+      <td>${moveIn}</td>
+      <td class="amt">${dep ? fmt(dep) : '—'}</td>
+      <td>${ec}</td>
+    </tr>`;
+  };
+  document.getElementById('print-area').innerHTML = `
+    <div class="bill-print" style="max-width:100%">
+      <div class="bp-head">
+        <h2>🏠 ${esc(db.settings.name || 'Apartment')}</h2>
+        <p>Tenant Contact Sheet</p>
+        <p>${new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+      </div>
+      <table class="bp-table" style="width:100%">
+        <tr style="font-weight:700;border-bottom:2px solid #333">
+          <td>Room</td><td>Tenant</td><td>Phone</td><td>Email</td><td>Move-in</td><td class="amt">Deposit</td><td>Emergency Contact</td>
+        </tr>
+        ${rooms.map(row).join('')}
+      </table>
+      <div class="bp-footer">${rooms.length} tenant(s) · Generated ${new Date().toLocaleString('en-PH')}</div>
     </div>
   `;
   window.print();
