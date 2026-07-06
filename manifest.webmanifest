@@ -1,0 +1,14 @@
+{
+  "name": "Apartment Manager",
+  "short_name": "Apartments",
+  "description": "Manage rooms, tenants, monthly billing, payments, expenses and more.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f4f6",
+  "theme_color": "#4f46e5",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
