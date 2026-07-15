@@ -4024,7 +4024,13 @@ function renderBillSheet() {
     return s + db.payments.filter(p => ids.has(p.billId)).reduce((a, p) => a + (+p.amount||0), 0);
   }, 0);
   const totalBal      = rows.reduce((s, x) => s + (x.b ? x.b.balance : 0), 0);
-  const totalKwh      = rows.reduce((s, x) => s + (x.b ? (+x.b.kWh || 0) : 0), 0);
+  const sumBills = k => rows.reduce((s, x) => s + (x.b ? (+x.b[k] || 0) : 0), 0);
+  const totalKwh      = sumBills('kWh');
+  const totalRent     = sumBills('rent');
+  const totalElec     = sumBills('electricity');
+  const totalWater    = sumBills('water');
+  const totalWifi     = sumBills('wifi');
+  const totalPrevBal  = sumBills('prevBalance');
 
   container.innerHTML = `
     <div class="card" id="bs-printable">
@@ -4096,9 +4102,12 @@ function renderBillSheet() {
           <tfoot>
             <tr style="font-weight:700;border-top:2px solid var(--g200);background:var(--g50)">
               <td colspan="2">TOTAL</td>
-              <td></td>
+              <td style="text-align:right">${fmt(totalRent)}</td>
               <td style="text-align:center">${fmtKwh(totalKwh)}</td>
-              <td></td><td></td><td></td><td></td>
+              <td style="text-align:right">${fmt(totalElec)}</td>
+              <td style="text-align:right">${fmt(totalWater)}</td>
+              <td style="text-align:right">${totalWifi > 0 ? fmt(totalWifi) : '—'}</td>
+              <td style="text-align:right;color:${totalPrevBal > 0 ? 'var(--err)' : 'var(--g500)'}">${totalPrevBal > 0 ? fmt(totalPrevBal) : '—'}</td>
               <td style="text-align:right">${fmt(totalDue)}</td>
               <td style="text-align:right;color:var(--ok)">${fmt(totalCollected)}</td>
               <td style="text-align:right;color:var(--err)">${fmt(totalBal)}</td>
