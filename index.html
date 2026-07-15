@@ -1724,55 +1724,125 @@ function generateAllBills() {
   toast(`${saved} bill(s) saved for ${perLabel(p)}`);
 }
 
-// Re-apply the CURRENT utility rates to this month's already-saved bills,
-// using each bill's stored meter readings — no need to re-enter anything.
-// Keeps meter readings, recorded payments, rent, and carried-over balances.
-function recomputeMonthBills() {
-  const p = getPer('bill-m', 'bill-y');
-  const s = db.settings;
-  const bills = db.bills.filter(b => b.period === p);
-  if (!bills.length) { toast(`No saved bills for ${perLabel(p)} to recompute`, 't-err'); return; }
+// ---- Re-pricing already-saved bills ----
+// A saved bill freezes its own amounts, so changing a rate in Settings does
+// NOT move bills that were already saved. These helpers re-price them from
+// their stored meter readings, so a rate edit can be applied to real history.
 
-  // Preview the electricity impact before committing
-  let oldElec = 0, newElec = 0;
-  const preview = bills.map(b => {
-    const kWh = Math.max(0, (+b.currReading || 0) - (+b.prevReading || 0));
-    const ne = Math.round(kWh * elecRateFor(b.period));
-    oldElec += (+b.electricity || 0);
-    newElec += ne;
-    return { b, kWh, ne };
+// What a saved bill's amounts WOULD be under the rates currently configured.
+// Rent, readings, persons, extras and payments all come from the bill itself.
+function repricedParts(b) {
+  const s = db.settings;
+  const room = getRoom(b.roomId);
+  const caretaker = room ? isCaretaker(room) : (+b.rent === 0 && +b.water === 0 && +b.wifi === 0);
+  const kWh = Math.max(0, (+b.currReading || 0) - (+b.prevReading || 0));
+  return {
+    kWh,
+    electricity: Math.round(kWh * elecRateFor(b.period)),
+    // water 0 = "tenant away that month"; keep it 0 rather than re-charging them
+    water: (!caretaker && +b.water > 0) ? Math.round((+b.persons || 1) * s.water) : 0,
+    wifi:  (!caretaker && +b.wifi  > 0) ? s.wifi : 0,
+    rent:  caretaker ? 0 : (+b.rent || 0),
+  };
+}
+
+// True when a bill's stored amounts no longer match the configured rates.
+function billIsStale(b) {
+  const n = repricedParts(b);
+  return n.electricity !== (+b.electricity || 0)
+      || n.water       !== (+b.water || 0)
+      || n.wifi        !== (+b.wifi || 0);
+}
+
+function periodsWithBillsFrom(startPeriod) {
+  return [...new Set(db.bills.map(b => b.period))].filter(p => p >= startPeriod).sort();
+}
+
+// Re-price every saved bill from startPeriod onward, oldest month first, so a
+// changed amount ripples forward through carried-over balances instead of
+// leaving later months stranded on a stale figure.
+//
+// The ripple is applied as a DELTA — "the month before you moved by X, so your
+// previous balance moves by X too" — rather than overwriting each previous
+// balance with the prior month's. Overwriting would look equivalent on a clean
+// chain, but it silently rewrites any figure that doesn't already reconcile
+// (a hand-adjusted carry-over, a legacy import). A delta preserves that offset
+// and still gets the rate change right.
+function recomputeBillsFrom(startPeriod) {
+  const touched = [];
+  const balanceShift = new Map(); // bill.id -> how far its balance moved in this run
+  periodsWithBillsFrom(startPeriod).forEach(p => {
+    db.bills.filter(b => b.period === p).forEach(b => {
+      const { kWh, electricity, water, wifi, rent } = repricedParts(b);
+      const prevBill    = getBill(b.roomId, prevPer(p));
+      const shift       = prevBill ? (balanceShift.get(prevBill.id) || 0) : 0;
+      const prevBalance = (+b.prevBalance || 0) + shift;
+      const carryIn     = +b.carryIn || 0;
+      const extrasTotal = (Array.isArray(b.extras) ? b.extras : []).reduce((a, e) => a + (+e.amount || 0), 0);
+      const totalDue    = rent + electricity + water + wifi + prevBalance + carryIn + extrasTotal;
+      const paidAmount  = +b.paidAmount || 0;
+      const balance     = totalDue - paidAmount;
+      balanceShift.set(b.id, balance - (+b.balance || 0));
+      Object.assign(b, {
+        kWh, electricity, water, wifi, rent, prevBalance, totalDue, balance,
+        status: balance <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid'
+      });
+      touched.push(b);
+    });
   });
+  touched.forEach(b => persistUpsert('bills', b));
+  return touched.length;
+}
+
+// Show the impact, then commit if confirmed.
+function promptRecomputeFrom(startPeriod, headline) {
+  const periods = periodsWithBillsFrom(startPeriod);
+  let oldElec = 0, newElec = 0, count = 0;
+  periods.forEach(p => db.bills.filter(b => b.period === p).forEach(b => {
+    oldElec += +b.electricity || 0;
+    newElec += repricedParts(b).electricity;
+    count++;
+  }));
+  if (!count) { toast('No saved bills to recompute', 't-err'); return; }
   const diff = newElec - oldElec;
   const sign = diff >= 0 ? '+' : '−';
+  const ripple = periods.length > 1
+    ? `\n\nIncludes the later months you've already billed, so carried-over balances stay correct:\n${periods.map(perLabel).join(', ')}`
+    : '';
 
   if (!confirm(
-    `Recompute ${bills.length} bill(s) for ${perLabel(p)} using current rates?\n\n` +
-    `Electricity rate: ₱${s.electricity}/kWh\n` +
-    `Total electricity: ${fmt(oldElec)} → ${fmt(newElec)}  (${sign}${fmt(Math.abs(diff))})\n\n` +
-    `Meter readings and recorded payments are kept. Rent and previous balances are unchanged.\n\n` +
-    `Note: if you've ALSO generated bills for months after ${perLabel(p)}, recompute those too (oldest first) so carried-over balances stay correct.`
+    `${headline}\n\n` +
+    `${count} bill(s) across ${periods.length} month(s)\n` +
+    `Total electricity: ${fmt(oldElec)} → ${fmt(newElec)}  (${sign}${fmt(Math.abs(diff))})` + ripple + `\n\n` +
+    `Meter readings and recorded payments are kept.`
   )) return;
 
-  preview.forEach(({ b, kWh, ne }) => {
-    const room = getRoom(b.roomId);
-    const caretaker = room ? isCaretaker(room) : (+b.rent === 0 && +b.water === 0 && +b.wifi === 0);
-    const water = (!caretaker && +b.water > 0) ? Math.round((+b.persons || 1) * s.water) : 0;
-    const wifi  = (!caretaker && +b.wifi  > 0) ? s.wifi : 0;
-    const rent  = caretaker ? 0 : (+b.rent || 0);
-    const prevBalance = +b.prevBalance || 0;
-    const carryIn = +b.carryIn || 0;
-    const extrasTotal = (Array.isArray(b.extras) ? b.extras : []).reduce((s, e) => s + (+e.amount || 0), 0);
-    const totalDue = rent + ne + water + wifi + prevBalance + carryIn + extrasTotal;
-    const balance = totalDue - (+b.paidAmount || 0);
-    Object.assign(b, {
-      kWh, electricity: ne, water, wifi, rent, totalDue, balance,
-      status: balance <= 0 ? 'paid' : (+b.paidAmount || 0) > 0 ? 'partial' : 'unpaid'
-    });
-    persistUpsert('bills', b);
-  });
+  const n = recomputeBillsFrom(startPeriod);
   renderBilling();
   renderDashboard();
-  toast(`${bills.length} bill(s) recomputed for ${perLabel(p)}`);
+  if (document.getElementById('billsheet-content')) renderBillSheet();
+  toast(`${n} bill(s) recomputed`);
+}
+
+// Re-apply the CURRENT utility rates to the selected month's saved bills,
+// using each bill's stored meter readings — no need to re-enter anything.
+function recomputeMonthBills() {
+  const p = getPer('bill-m', 'bill-y');
+  if (!db.bills.some(b => b.period === p)) { toast(`No saved bills for ${perLabel(p)} to recompute`, 't-err'); return; }
+  promptRecomputeFrom(p, `Recompute bills from ${perLabel(p)} onward using current rates?`);
+}
+
+// Called right after rates are saved: a rate edit is invisible until the bills
+// that were already saved under the old rate are re-priced, so offer it here
+// instead of leaving the user to find the Recompute button on each month.
+function offerRecomputeAfterRateChange() {
+  const stale = db.bills.filter(billIsStale);
+  if (!stale.length) return;
+  const earliest = stale.map(b => b.period).sort()[0];
+  promptRecomputeFrom(
+    earliest,
+    `${stale.length} already-saved bill(s) still use the old rates.\n\nUpdate them to the new rates now?`
+  );
 }
 
 // ======================== EXTRA CHARGES (repairs, fees, etc.) ========================
@@ -2917,6 +2987,7 @@ function saveSettings() {
   closeModal();
   document.querySelector('header h1').textContent = '🏠 ' + db.settings.name;
   toast('Rates saved');
+  offerRecomputeAfterRateChange();
 }
 
 // ======================== PRINT BILL ========================
