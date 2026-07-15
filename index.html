@@ -896,6 +896,12 @@ function fmt(n) {
   return '₱' + Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// Meter readings may be fractional, so kWh can carry long float tails. Cap at
+// one decimal; whole numbers stay whole.
+function fmtKwh(n) {
+  return Number(n || 0).toLocaleString('en-PH', { maximumFractionDigits: 1 });
+}
+
 // ======================== HTML ESCAPING (XSS DEFENSE) ========================
 // All user-entered text (tenant names, notes, descriptions, contacts, etc.) is
 // rendered via innerHTML throughout this app. Without escaping, a value like
@@ -1559,7 +1565,7 @@ function renderBilling() {
             <div id="meterwarn-${r.id}" style="font-size:.75rem;color:var(--err);margin-top:.25rem"></div>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:.875rem;margin-top:.5rem">
-            <span>kWh Used: <strong id="kwh-${r.id}">${kWh}</strong></span>
+            <span>kWh Used: <strong id="kwh-${r.id}">${fmtKwh(kWh)}</strong></span>
             <span>Amount: <strong id="elec-amt-${r.id}">${fmt(existing ? existing.electricity : 0)}</strong></span>
           </div>
         </div>
@@ -1650,7 +1656,7 @@ function updateBillRow(roomId) {
     if (curr > 0 && curr < prev) {
       warnEl.textContent = `⚠ Current reading (${curr}) is LOWER than previous (${prev}) — double-check for a typo`;
     } else if (curr > 0 && kWh > 1000) {
-      warnEl.textContent = `⚠ ${kWh} kWh is unusually high — double-check the reading`;
+      warnEl.textContent = `⚠ ${fmtKwh(kWh)} kWh is unusually high — double-check the reading`;
     } else {
       warnEl.textContent = '';
     }
@@ -1665,7 +1671,7 @@ function updateBillRow(roomId) {
   const extrasTotal = existB && Array.isArray(existB.extras) ? existB.extras.reduce((s, e) => s + (+e.amount || 0), 0) : 0;
   const total = (caretaker ? 0 : +room.rent) + electricity + water + wifiAmt + prevBal + carryIn + extrasTotal;
 
-  document.getElementById('kwh-' + roomId).textContent = kWh;
+  document.getElementById('kwh-' + roomId).textContent = fmtKwh(kWh);
   document.getElementById('elec-amt-' + roomId).textContent = fmt(electricity);
   if (!caretaker) {
     document.getElementById('water-amt-' + roomId).textContent = fmt(water);
@@ -2937,7 +2943,7 @@ function buildBillHTML(bill) {
       </div>
       <table class="bp-table">
         <tr><td>Monthly Rent</td><td class="amt">${fmt(bill.rent)}</td></tr>
-        <tr><td>Electricity (${bill.prevReading} → ${bill.currReading} = ${bill.kWh} kWh × ₱${elecRateFor(bill.period)})</td><td class="amt">${fmt(bill.electricity)}</td></tr>
+        <tr><td>Electricity (${fmtKwh(bill.prevReading)} → ${fmtKwh(bill.currReading)} = ${fmtKwh(bill.kWh)} kWh × ₱${elecRateFor(bill.period)})</td><td class="amt">${fmt(bill.electricity)}</td></tr>
         <tr><td>Water (${bill.persons} person${bill.persons > 1 ? 's' : ''} × ₱${db.settings.water})</td><td class="amt">${fmt(bill.water)}</td></tr>
         <tr><td>WiFi</td><td class="amt">${bill.wifi > 0 ? fmt(bill.wifi) : '—'}</td></tr>
         ${bill.prevBalance > 0 ? `<tr><td style="color:#dc2626">Previous Balance</td><td class="amt" style="color:#dc2626">${fmt(bill.prevBalance)}</td></tr>` : ''}
@@ -3263,8 +3269,8 @@ function qeCalc(roomId) {
 
   totalEl.textContent = fmt(total);
   brkEl.textContent = caretaker
-    ? `${kWh}kWh ⚡${elec}${prevBal ? ' +bal ' + prevBal : ''}`
-    : `${kWh}kWh ⚡${elec} 💧${water}${wifiAmt ? ' 📶' + wifiAmt : ''}${prevBal ? ' +bal ' + prevBal : ''}`;
+    ? `${fmtKwh(kWh)}kWh ⚡${elec}${prevBal ? ' +bal ' + prevBal : ''}`
+    : `${fmtKwh(kWh)}kWh ⚡${elec} 💧${water}${wifiAmt ? ' 📶' + wifiAmt : ''}${prevBal ? ' +bal ' + prevBal : ''}`;
   warnEl.textContent = kWh > 1000 ? '⚠ high' : '';
   qeGrand();
 }
@@ -4018,6 +4024,7 @@ function renderBillSheet() {
     return s + db.payments.filter(p => ids.has(p.billId)).reduce((a, p) => a + (+p.amount||0), 0);
   }, 0);
   const totalBal      = rows.reduce((s, x) => s + (x.b ? x.b.balance : 0), 0);
+  const totalKwh      = rows.reduce((s, x) => s + (x.b ? (+x.b.kWh || 0) : 0), 0);
 
   container.innerHTML = `
     <div class="card" id="bs-printable">
@@ -4034,7 +4041,8 @@ function renderBillSheet() {
           <div style="font-weight:700;font-size:1rem">${perLabel(p)} — All Rooms</div>
           <div style="font-size:.8125rem;color:var(--g500)">${rows.filter(x=>x.b).length} of ${rooms.length} rooms billed</div>
         </div>
-        <div style="display:flex;gap:1rem;font-size:.875rem">
+        <div style="display:flex;gap:1rem;font-size:.875rem;flex-wrap:wrap">
+          <span>Total kWh: <strong style="color:var(--warn)">${fmtKwh(totalKwh)}</strong></span>
           <span>Total Billed: <strong style="color:var(--p)">${fmt(totalDue)}</strong></span>
           <span>Collected: <strong style="color:var(--ok)">${fmt(totalCollected)}</strong></span>
           <span>Balance: <strong style="color:var(--err)">${fmt(totalBal)}</strong></span>
@@ -4073,7 +4081,7 @@ function renderBillSheet() {
                   <td><strong>${esc(r.number)}</strong></td>
                   <td>${esc(r.tenant)}</td>
                   <td style="text-align:right">${fmt(b.rent)}</td>
-                  <td style="text-align:center">${b.kWh}</td>
+                  <td style="text-align:center">${fmtKwh(b.kWh)}</td>
                   <td style="text-align:right">${fmt(b.electricity)}</td>
                   <td style="text-align:right">${fmt(b.water)}</td>
                   <td style="text-align:right">${b.wifi > 0 ? fmt(b.wifi) : '—'}</td>
@@ -4088,7 +4096,9 @@ function renderBillSheet() {
           <tfoot>
             <tr style="font-weight:700;border-top:2px solid var(--g200);background:var(--g50)">
               <td colspan="2">TOTAL</td>
-              <td></td><td></td><td></td><td></td><td></td><td></td>
+              <td></td>
+              <td style="text-align:center">${fmtKwh(totalKwh)}</td>
+              <td></td><td></td><td></td><td></td>
               <td style="text-align:right">${fmt(totalDue)}</td>
               <td style="text-align:right;color:var(--ok)">${fmt(totalCollected)}</td>
               <td style="text-align:right;color:var(--err)">${fmt(totalBal)}</td>
