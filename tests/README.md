@@ -3,7 +3,8 @@
 Playwright suite for apartment-manager. Run with `npm test`.
 
 ```bash
-npm install       # first time only; also downloads Chromium
+npm install       # first time only
+npm run setup     # first time only — downloads Chromium (~130MB)
 npm test          # headless, ~8 seconds
 npm run test:ui   # interactive, for debugging a failure
 npm run test:headed
@@ -11,6 +12,13 @@ npm run test:headed
 
 The app has no build step (D-001) and this does not change that. `package.json` exists **only** to
 run these tests — `index.html` is still served and deployed exactly as it sits in the repo.
+
+> **Why browser install is a separate `npm run setup` and not a `postinstall` hook.** The host
+> serves this repo statically. Before the test suite existed there was no `package.json` at all,
+> so the host did no install step. Adding one means `npm install` may now run on every deploy — and
+> a `postinstall` that downloads Chromium would run with it, slowing or breaking production
+> deploys for a browser no deploy needs. For the same reason there is deliberately **no `build`
+> script**. If you ever add one, check what the host does with it first.
 
 ## How it works
 
