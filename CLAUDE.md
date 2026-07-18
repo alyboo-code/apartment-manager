@@ -29,11 +29,29 @@ v2.0
      off it -- vagueness here produces vague work everywhere downstream.
      ══════════════════════════════════════════════════════════════════════════ -->
 
-TODO: one paragraph. Stack, build step (or lack of one), persistence, deploy target.
+A point-of-sale for rooms for rent: the landlord enters each month's meter readings and charges,
+the app produces per-room bill sheets, and tracks payments, expenses, maintenance, and mortgage
+progress. It is **one file** — `index.html` holds the markup, CSS, and all ~169 functions of
+vanilla JS. **There is no build step, no framework, and no module system**; the file runs as-is in
+a browser. Persistence is Supabase (Postgres + Auth) over seven tables — `rooms`, `bills`,
+`payments`, `expenses`, `maintenance`, `mortgages`, `settings` — every row scoped by `user_id`,
+with the Supabase JS client loaded from CDN under an SRI hash. Writes are per-row upserts; a write
+that fails goes to a localStorage outbox (`apt_outbox`) and replays on reconnect. A service worker
+makes it installable on a phone. Deploys by pushing `main` to GitHub, from which Netlify serves the
+repo (`_headers` supplies the CSP and security headers).
 
 Core files:
-- TODO: `path` - what lives here
-- TODO: `path` - what lives here
+- `index.html` - the entire application. Markup, CSS, and all JS. Everything below lives inside it.
+- `index.html` → `loadDB()` - reads all seven tables into the in-memory `db` object on login.
+- `index.html` → `persistUpsert()` / `persistDelete()` - the ONLY sanctioned write path. Per-row,
+  never whole-db. Handles the offline outbox and surfaces server rejections loudly.
+- `index.html` → `flushOutbox()` / `loadOutbox()` / `enqueue()` - the `apt_outbox` offline queue.
+- `index.html` → `replaceCloudWithDb()` - Restore. Deletes every cloud row absent from the
+  in-memory db. The single most destructive function in the app.
+- `index.html` → `doLogin()` / `doLogout()` - the whole auth surface.
+- `supabase-schema.sql` - table definitions and row-level security policies.
+- `_headers` - Netlify CSP and security headers for the deployed site.
+- `sw.js`, `manifest.webmanifest` - service worker and PWA install manifest.
 
 This file is the router. Read it first, then load only the docs needed for the current work.
 Code is the source of truth for how things behave. Docs are the source of truth for why and where.
@@ -196,7 +214,7 @@ When in doubt: prefer stopping over guessing.
 | `METRICS.md` | Weekly engineering metrics | Evidence over intuition |
 | `docs/PROJECT.md` | What, why, who, non-goals, north-star goals | Product intent and scope |
 | `docs/ARCHITECTURE.md` | Subsystems by named entry point, data flow, sync | System design and where things live |
-| `docs/DATA_MODEL.md` | AppState, Recipe, Firestore, localStorage, hardcoded DBs | Data shapes and storage keys |
+| `docs/DATA_MODEL.md` | The `db` object, the seven Supabase tables, localStorage keys, outbox op shape | Data shapes and storage keys |
 | `docs/FEATURES.md` | Feature catalog by tab and status | Feature existence and status |
 | `docs/DECISIONS.md` | ADR-lite rationale | Why key choices were made |
 | `docs/AI_OS_NOTES.md` | Append-only friction log — one line per workflow awkwardness noticed | Candidate improvements to the OS itself, pending promotion |
@@ -292,7 +310,7 @@ An approved review has **two** landing states. Pick by blast radius, not by conf
 | Status | Meaning | Effect |
 |---|---|---|
 | `done` | Approved **and reversible** — UI, CSS, copy, additive non-data features. | **Auto-merges** to `main` and deploys (D-027). No human step. |
-| `approved` | Approved **but red-zone** — Firestore/sync/storage, the tombstone-merge-deletion machinery, `saveData()` / the `cloudReady` write-guard, auth, security, or the AI Dev OS / automation itself. | **Held.** `main` is NOT merged; the human eyeballs the branch and merges. |
+| `approved` | Approved **but red-zone** — anything under Hard Rules 3-7: `loadDB()` and the read path, `persistUpsert()` / `persistDelete()`, the `apt_outbox` queue and `classifyWriteError()`, `replaceCloudWithDb()` / `bulkReplaceCloud()`, `user_id` scoping on any query, bill/payment arithmetic, `doLogin()` / auth, `supabase-schema.sql`, `_headers`, or the AI Dev OS / automation itself. | **Held.** `main` is NOT merged; the human eyeballs the branch and merges. |
 
 Why: a broken UI change is reverted in a minute; **lost user data cannot be reverted at all** (north-star
 goal #2). Red-zone work therefore never auto-ships. When torn between `done` and `approved`, choose
@@ -362,11 +380,37 @@ Do not violate a higher-priority rule to satisfy a lower-priority one.
      numbering is load-bearing: Sprint Execution Mode cites "Hard Rule 10".
      ══════════════════════════════════════════════════════════════════════════ -->
 
-3. TODO: an app hard rule, stated as the mistake and the consequence.
-4. TODO
-5. TODO
-6. TODO
-7. TODO
+3. **Never write the whole `db` to the cloud.** Writes go through `persistUpsert()` /
+   `persistDelete()`, one row at a time. Dumping the full in-memory db lets a stale device clobber
+   newer data and resurrect rows another device just deleted — silently, with no error. The only
+   sanctioned exceptions are `bulkReplaceCloud()` and `replaceCloudWithDb()`, both reached solely
+   from an explicit user-initiated Restore. Violating this loses billing history (north-star #1).
+
+4. **A failed read must never look like an empty database.** Supabase resolves failed queries as
+   `{ data: null, error }` — it does not throw. Any code doing `result.data || []` without first
+   checking `result.error` will render an app with zero rooms and zero bills that looks like real,
+   empty data. The landlord then re-enters everything, and because each new row gets a fresh
+   `crypto.randomUUID()`, nothing collides — the result is a silently duplicated database. Check
+   `.error` on every query and refuse to swap in a partial `db`.
+
+5. **Every query filters on `user_id`; every written row carries it.** No exceptions, on either
+   reads or writes, including any new table. Row-level security in `supabase-schema.sql` is the
+   second layer, not the first — do not lean on it in place of the client-side filter. One landlord
+   seeing another's tenants ends the product (north-star #2).
+
+6. **Never report a write as saved unless the server accepted it.** `classifyWriteError()` exists
+   to tell a transient offline failure apart from a permanent server rejection, because a missing
+   column once hid for weeks behind a cheerful "Saved offline". Offline → queue quietly and retry.
+   Rejected → queue AND show the red `⚠ NOT saved` badge. Never collapse the two.
+
+7. **Bill and payment arithmetic changes are red-zone.** Rates, meter-reading deltas, charge
+   totals, balance-due, and overdue calculation decide what a real person is asked to pay. A
+   rendering bug is embarrassing; a wrong total is a real dispute with a tenant. Any change here
+   needs worked examples in `TEST_REPORT.md`, not just "tests pass".
+
+   *Red zone for D-032 (merge gate) = rules 3-7: persistence, reads, `user_id` scoping, write
+   status reporting, and billing math. Work touching any of them lands `approved` (held for human
+   merge), never `done` (auto-merge).*
 
 8. **Reference stable anchors in docs:** function/object names, DOM ids, storage keys, and DB paths.
    Never line numbers — they rot on the next edit and silently mislead. See DECISIONS D-008.
@@ -382,13 +426,43 @@ Do not violate a higher-priority rule to satisfy a lower-priority one.
   special characters.
 - Autonomous Claude sessions run via `run-claude.ps1`; it reads `CLAUDE.md`, `STATUS.md`,
   `planning/TASK.md`, then runs triage on `captures/inbox/`.
-- TODO: add this app's gotchas as you hit them. This section earns its keep only if it is written
-  from experience — leave it short.
+- **The planning files have a STRICT machine-readable format, and it differs per file.** Seven
+  scripts in `tools/` parse them with regexes. Get the shape wrong and nothing errors — the
+  generators just silently report zero items, so the Telegram digest cheerfully says "no tasks"
+  forever. Verified 2026-07-19 by breaking it and fixing it:
+
+  | File | Heading (exact) | Status line (exact) |
+  |---|---|---|
+  | `TASKS.md` | `### TASK-001 — title` | bare `status: codex` at line start |
+  | `planning/PROPOSALS.md` | `### PROP-001 — title` | **bolded** `- **status:** pending` |
+  | `planning/BUILD_QUEUE.md` | `### BQ-001 — title` | n/a |
+  | `docs/DECISIONS.md` | `## D-001 — title` | bare `Verify: <file> contains "..."` at line start |
+
+  Always `###` (not `##`) for tasks/proposals/BQ. Always `TASK-NNN`, never `T-NNN`. The bolding
+  is inconsistent between tasks and proposals — that is the tooling's contract, not a typo to fix.
+  After editing any of these, run `tools/Generate-Codex-Notice.ps1` and `tools/Generate-Digest.ps1`
+  and confirm your item actually appears.
+- **`planning/ROADMAP.md` must keep its `## Current Objective` heading followed by a bold line.**
+  `Generate-Digest.ps1` regexes for exactly that; without it the digest reports `Objective: unset`
+  and triage has nothing to score `goal alignment` against.
+- **Run `tools/Check-DocsConsistency.ps1` and `tools/Verify-Decisions.ps1` after doc edits.** They
+  catch identifiers referenced in docs that no longer exist in `index.html`. They also flag
+  backticked prose as if it were a code anchor, so keep incidental technical words out of
+  backticks in `docs/DECISIONS.md`.
+- **Supabase queries do not throw.** `select()` / `upsert()` / `delete()` resolve with
+  `{ data, error }`. `try/catch` alone catches nothing — you must check `.error` explicitly. This
+  is the root of Hard Rule 4.
+- **`index.html` is ~220KB.** Do not read it whole. Grep for the function name or DOM id and read
+  the surrounding range.
+- **The CDN `<script>` tag carries an SRI `integrity` hash.** Bumping the Supabase client version
+  without updating the hash silently breaks the entire app — the script fails to load and nothing
+  renders. Update both together.
+- **`_headers` CSP has an explicit `connect-src` allowlist.** Adding any new external origin
+  requires editing it, or the request is blocked in production but works fine locally.
 
 ## Deploy
 
-<!-- TODO: the exact commands, and how long the deploy takes to go live. Be specific: an agent will
-     run these unattended. -->
+`main` is production. There is no staging branch and no CI — pushing `main` ships to real users.
 
 ```bash
 git add <files>
@@ -396,7 +470,19 @@ git commit -m "..."
 git push origin main
 ```
 
-TODO: what happens after the push, and how long until it is live.
+Remote is `https://github.com/alyboo-code/apartment-manager.git`. The presence of `_headers`
+(a Netlify-format file) indicates Netlify serves the repo, which would redeploy automatically on
+push, typically within a minute.
+
+> ⚠ **UNVERIFIED.** There is no `netlify.toml`, no `.github/workflows/`, and no other host config
+> in the repo, so the Netlify site-to-repo link could not be confirmed from the code alone.
+> Before an agent relies on this unattended, confirm the connection in the Netlify dashboard and
+> replace this block with the site name and the observed deploy time. Until then, treat a push as
+> "probably live in about a minute" and verify in the browser.
+
+Because `main` is production and there is no rollback automation, a red-zone change (Hard Rules
+3-7) landing here is unrecoverable by pushing again — the data damage is already done. That is the
+whole reason the D-032 gate holds those changes for human merge.
 
 ## Common Commands
 
@@ -464,10 +550,11 @@ Claude classifies the whole task group by its single highest-risk member:
   multiple files/elements), test-fixture-only fixes, docs-only edits. May contain many tasks.
 - **Medium** — real logic changes (new function, new state, non-trivial conditionals), but nothing
   touching a Hard Rule surface. Keep the group to one coherent, dependency-chained slice.
-- **High** — any task touches a Hard Rule surface (Firestore write/read-guard code, `saveData()`
-  call sites, recipe-id `onclick` handlers, the `:root` CSS block) or touches architecture, auth,
-  security, database/schema, or the AI Dev OS/workflow files themselves. **Never chained** — see
-  Hard Rule 10.
+- **High** — any task touches a Hard Rule surface: `loadDB()` or the read path, `persistUpsert()` /
+  `persistDelete()`, the `apt_outbox` queue, `classifyWriteError()`, `replaceCloudWithDb()` /
+  `bulkReplaceCloud()`, `user_id` scoping on any query, bill or payment arithmetic, `doLogin()` /
+  auth, `supabase-schema.sql`, or `_headers`. Also architecture, security, database/schema, or the
+  AI Dev OS / workflow files themselves. **Never chained** — see Hard Rule 10.
 
 A mixed-risk group is classified at its highest risk. Split a High-risk task into its own group
 rather than carving out an exception for it inside a Low/Medium one.
