@@ -2,15 +2,60 @@
 
 > Where the project is right now. The first thing any agent reads.
 
-**Milestone:** —
-**Active task:** —
-**Owner:** —
-**Blockers:** none
+**Milestone:** Make a failed read impossible to mistake for an empty database (BQ-001)
+**Active task:** T-001 — `loadDB()` must surface read failures
+**Owner:** Codex
+**Blockers:** none. `npm test` runs — 26 passing, 6 failing, and the 6 are TASK-001's acceptance
+criteria in executable form (`tests/read-failures.spec.js`). Codex can pick this up.
 
 ## Last shipped
 
-*Nothing yet.*
+*Nothing yet.* No application code has changed. 2026-07-19: the AI Dev OS was seeded against this
+app — `docs/PROJECT.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/FEATURES.md`,
+`docs/DECISIONS.md` (D-001..D-004), and `CLAUDE.md`'s app-specific sections including Hard Rules
+3-7. Four Telegram plumbing-test captures were archived to `captures/processed/2026/07/`.
+
+## Triage log
+
+- 2026-07-19 — 1 capture in, 1 proposal out. `20260719T0000Z-manual1-bug` → PROP-001 (Approve,
+  Risk High) → BQ-001 → TASK-001. Inbox drained.
+
+## Pipeline test — 2026-07-19
+
+Exercised the automation directly rather than reading it. Results:
+
+**Working:** Telegram → `captures/inbox/` (a live capture arrived mid-session). Both launchd jobs
+(`com.aidevos.apartment-manager.overnight`, `.dispatcher`) loaded on macOS via `pwsh`.
+`Generate-Codex-Notice.ps1` and `Generate-Digest.ps1` produce correct Telegram-ready output.
+`Dispatch-Commands.ps1 -DryRun` correctly routed `/next` → "TASK-001, owner Codex, run: build".
+`Check-DocsConsistency.ps1` and `Verify-Decisions.ps1` both pass clean.
+
+**Found and fixed:**
+- The planning files have a strict per-file regex format that no OS doc stated. Tasks written the
+  way `CLAUDE.md`'s Definition of Ready describes parse as *zero tasks* — silently. Contract now
+  documented in `CLAUDE.md` → Tooling Gotchas.
+- `CLAUDE.md`'s risk-gate table and Sprint Execution Mode defined the red zone in terms of a
+  different application (Firestore, tombstone-merge-deletion, `saveData()`, `cloudReady`,
+  recipe-id handlers). None exist here. An agent checking "is this red zone?" would have found no
+  match and auto-merged to production. Rewritten against this app's real surfaces.
+- `planning/ROADMAP.md` was missing the `## Current Objective` heading the digest requires.
+
+## Test suite — added 2026-07-19
+
+Playwright, 32 tests, ~8s, fully offline. `npm test`. See `tests/README.md` and D-005.
+
+Coverage maps to the Hard Rules: read failures (HR4), write path and outbox (HR3, HR6), billing
+arithmetic (HR7), account scoping (HR5), plus boot/login smoke.
+
+**Baseline: 26 passing, 6 failing by design** — the six are TASK-001's acceptance criteria. The
+suite proved a second instance of the bug that code reading alone had missed:
+`refreshFromCloud()` runs on focus/reconnect/visibilitychange and empties the in-memory db on a
+failed refresh — rooms observed going 2 → 0 in a live session. Now folded into TASK-001 as AC-8.
 
 ## Needs human verification
 
-*Nothing pending.*
+1. **The deploy target is unconfirmed.** `_headers` is a Netlify-format file and the remote is
+   `github.com/alyboo-code/apartment-manager`, but there is no `netlify.toml`, no
+   `.github/workflows/`, and no other host config in the repo — so the site-to-repo link could not
+   be verified from the code. `CLAUDE.md` → Deploy carries an explicit UNVERIFIED warning. Confirm
+   in the Netlify dashboard before any agent pushes unattended.
