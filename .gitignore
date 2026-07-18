@@ -12,6 +12,13 @@ backups/
 # Harness lock files
 .claude/scheduled_tasks.lock
 
+# Playwright — the suite is committed, its output is not.
+node_modules/
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
 # AI Dev OS runtime artifacts -- these MUST be ignored, or the merge gates see a
 # permanently dirty tree and refuse to merge anything.
 claude-session.log
