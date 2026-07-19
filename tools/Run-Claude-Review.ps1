@@ -361,8 +361,31 @@ State which gate you picked, and why, at the end of the REVIEW.md entry.
     # planner, where Claude only received the head of the prompt. Piping via stdin delivers it intact
     # AND gives claude an immediate EOF (no ~3s stall).
     $psi = New-Object System.Diagnostics.ProcessStartInfo
-    if ($OnWindows) { $psi.FileName = 'cmd.exe'; $psi.Arguments = '/c claude -p --allowedTools "Read" "Glob" "Grep" "Edit" "Write" "Task" "Bash(git status)" "Bash(git diff *)" "Bash(git log *)"' }
-    else            { $psi.FileName = '/bin/sh'; $psi.Arguments = '-c ''claude -p --allowedTools "Read" "Glob" "Grep" "Edit" "Write" "Task" "Bash(git status)" "Bash(git diff *)" "Bash(git log *)"''' }
+    if ($OnWindows) {
+        $psi.FileName = 'cmd.exe'; $psi.Arguments = '/c claude -p --allowedTools "Read" "Glob" "Grep" "Edit" "Write" "Task" "Bash(git status)" "Bash(git diff *)" "Bash(git log *)"'
+    } else {
+        # DO NOT route through `/bin/sh -c '...'` here. The grants contain both double quotes and
+        # parentheses, and wrapping them in a PowerShell single-quoted string left sh with an
+        # unbalanced quote:
+        #     -p: -c: line 0: unexpected EOF while looking for matching `''
+        # claude never started; the runner reported only "review exited 2", which reads like a model
+        # or auth failure rather than a quoting one. Confirmed live -- it killed the auto-review of
+        # the first successful autonomous build. Same bug this file's sibling had in the build path.
+        #
+        # On macOS/Linux `claude` is a real executable with a shebang, so start it directly by
+        # resolved path and pass argv entries individually. No shell, nothing to escape.
+        $claudeExe = (Get-Command claude -ErrorAction SilentlyContinue).Source
+        if (-not $claudeExe) {
+            Write-Result "ABORTED: 'claude' is not on PATH for this session -- cannot review."
+            exit 2
+        }
+        $psi.FileName = $claudeExe
+        foreach ($a in @('-p', '--allowedTools',
+                         'Read', 'Glob', 'Grep', 'Edit', 'Write', 'Task',
+                         'Bash(git status)', 'Bash(git diff *)', 'Bash(git log *)')) {
+            [void]$psi.ArgumentList.Add($a)
+        }
+    }
     $psi.WorkingDirectory = $root
     $psi.UseShellExecute = $false
     $psi.RedirectStandardInput = $true
