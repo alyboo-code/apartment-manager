@@ -26,6 +26,28 @@ function Resolve-DotnetRoot {
     ) | Where-Object { $_ -and (Test-Path (Join-Path $_ 'shared/Microsoft.NETCore.App')) } | Select-Object -First 1
 }
 
+# Same trap as DOTNET_ROOT above, one layer further in: launchd hands the job a bare default PATH
+# (/usr/bin:/bin:/usr/sbin:/sbin plus a little) and never sources the shell profile, so Homebrew's
+# /opt/homebrew/bin is simply absent. PowerShell then starts fine, the run reaches the builder, and
+# `Get-Command claude` returns nothing -- producing "neither 'codex' nor 'claude' is on PATH for
+# this session" and aborting every scheduled build, while the exact same command works when a human
+# runs it in a terminal. Confirmed live: a /go from Telegram aborted on this and nothing else.
+# Resolve the real directories now and bake them into the plist.
+function Resolve-LaunchdPath {
+    $dirs = @(
+        (Get-Command claude -ErrorAction SilentlyContinue).Source
+        (Get-Command codex  -ErrorAction SilentlyContinue).Source
+        (Get-Command git    -ErrorAction SilentlyContinue).Source
+        (Get-Command pwsh   -ErrorAction SilentlyContinue).Source
+    ) | Where-Object { $_ } | ForEach-Object { Split-Path $_ -Parent }
+
+    # Homebrew's bin is the usual missing piece; the rest are launchd's own defaults.
+    $dirs += @('/opt/homebrew/bin', '/opt/homebrew/sbin', '/usr/local/bin',
+               '/usr/bin', '/bin', '/usr/sbin', '/sbin')
+
+    ($dirs | Where-Object { $_ -and (Test-Path $_) } | Select-Object -Unique) -join ':'
+}
+
 # ---------------------------------------------------------------- macOS: launchd
 if (-not $OnWindows) {
     $runScript = "/Users/alyssamarieborbon/Downloads/Vibe coding/apartment-manager/run-claude.ps1"
@@ -41,6 +63,12 @@ if (-not $OnWindows) {
     if (-not $dotnetRoot) {
         Write-Host "FAILED: pwsh is installed but no .NET runtime was found. Install it:  brew install dotnet" -ForegroundColor Red
         exit 1
+    }
+    $launchdPath = Resolve-LaunchdPath
+    if (-not (Get-Command claude -ErrorAction SilentlyContinue) -and
+        -not (Get-Command codex  -ErrorAction SilentlyContinue)) {
+        Write-Host "WARNING: neither 'claude' nor 'codex' is on PATH right now. The plist will still" -ForegroundColor Yellow
+        Write-Host "         be written, but scheduled BUILDS will abort until one is installed." -ForegroundColor Yellow
     }
 
     New-Item -ItemType Directory -Path $plistDir -Force | Out-Null
@@ -63,7 +91,7 @@ if (-not $OnWindows) {
     <string>$runScript</string>
   </array>
   <key>EnvironmentVariables</key>
-  <dict><key>DOTNET_ROOT</key><string>$dotnetRoot</string></dict>
+  <dict><key>DOTNET_ROOT</key><string>$dotnetRoot</string><key>PATH</key><string>$launchdPath</string></dict>
   <key>StartCalendarInterval</key>
   <array>
     <dict><key>Hour</key><integer>21</integer><key>Minute</key><integer>0</integer></dict>

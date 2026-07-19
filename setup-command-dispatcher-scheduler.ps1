@@ -49,6 +49,27 @@ function Resolve-DotnetRoot {
     ) | Where-Object { $_ -and (Test-Path (Join-Path $_ 'shared/Microsoft.NETCore.App')) } | Select-Object -First 1
 }
 
+# Same trap as DOTNET_ROOT above, one layer further in: launchd hands the job a bare default PATH
+# and never sources the shell profile, so Homebrew's /opt/homebrew/bin is simply absent. PowerShell
+# starts fine, the dispatcher runs, and then `Get-Command claude` returns nothing -- producing
+# "neither 'codex' nor 'claude' is on PATH for this session" and aborting every scheduled build,
+# while the identical command works when a human runs it in a terminal. Confirmed live: a /go from
+# Telegram aborted on exactly this. Resolve the real directories and bake them into the plist.
+function Resolve-LaunchdPath {
+    $dirs = @(
+        (Get-Command claude -ErrorAction SilentlyContinue).Source
+        (Get-Command codex  -ErrorAction SilentlyContinue).Source
+        (Get-Command git    -ErrorAction SilentlyContinue).Source
+        (Get-Command pwsh   -ErrorAction SilentlyContinue).Source
+    ) | Where-Object { $_ } | ForEach-Object { Split-Path $_ -Parent }
+
+    # Homebrew's bin is the usual missing piece; the rest are launchd's own defaults.
+    $dirs += @('/opt/homebrew/bin', '/opt/homebrew/sbin', '/usr/local/bin',
+               '/usr/bin', '/bin', '/usr/sbin', '/sbin')
+
+    ($dirs | Where-Object { $_ -and (Test-Path $_) } | Select-Object -Unique) -join ':'
+}
+
 # =============================================================================================
 # macOS -- launchd. Not a translation of the Windows path: a genuinely different power model.
 #
@@ -76,6 +97,18 @@ if (-not $OnWindows) {
         Write-Host "FAILED: pwsh is installed but no .NET runtime was found. Install it:  brew install dotnet" -ForegroundColor Red
         exit 1
     }
+    # Fail loudly rather than writing an EMPTY <string></string> into the plist -- an empty PATH is
+    # strictly worse than launchd's default, and it fails at build time, far from this script.
+    $launchdPath = Resolve-LaunchdPath
+    if (-not $launchdPath) {
+        Write-Host "FAILED: could not resolve a PATH for the plist." -ForegroundColor Red
+        exit 1
+    }
+    if (-not (Get-Command claude -ErrorAction SilentlyContinue) -and
+        -not (Get-Command codex  -ErrorAction SilentlyContinue)) {
+        Write-Host "WARNING: neither 'claude' nor 'codex' is on PATH right now. The plist will still" -ForegroundColor Yellow
+        Write-Host "         be written, but scheduled BUILDS will abort until one is installed." -ForegroundColor Yellow
+    }
 
     New-Item -ItemType Directory -Path $plistDir -Force | Out-Null
 
@@ -94,7 +127,7 @@ if (-not $OnWindows) {
     <string>$dispatchScript</string>
   </array>
   <key>EnvironmentVariables</key>
-  <dict><key>DOTNET_ROOT</key><string>$dotnetRoot</string></dict>
+  <dict><key>DOTNET_ROOT</key><string>$dotnetRoot</string><key>PATH</key><string>$launchdPath</string></dict>
   <key>StartInterval</key><integer>1800</integer>
   <key>RunAtLoad</key><true/>
   <key>StandardOutPath</key><string>/Users/alyssamarieborbon/Downloads/Vibe coding/apartment-manager/claude-session.log</string>
