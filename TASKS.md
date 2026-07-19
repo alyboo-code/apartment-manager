@@ -10,7 +10,9 @@
 
 ### TASK-001 — Make `loadDB()` surface read failures instead of rendering an empty database
 
-status: codex
+status: blocked
+blocker:
+  - auto: build stopped -- TASK-001 build reached REVIEW (1 of 1 tracked task(s)) after 405s, pushed to task-001. -> auto-review: TASK-001 review FAILED: claude review exited 2. Left at status: review for automatic retry on the next /review or /go. See claude-session.log.
 owner: Codex
 source: BQ-001
 risk: High
