@@ -19,6 +19,14 @@ app — `docs/PROJECT.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/F
 
 - 2026-07-19 — 1 capture in, 1 proposal out. `20260719T0000Z-manual1-bug` → PROP-001 (Approve,
   Risk High) → BQ-001 → TASK-001. Inbox drained.
+- 2026-07-20 — 1 capture in, 0 proposals out. `20260719T1108Z-19-unknown` (body: "Hello") is
+  Telegram plumbing noise with no actionable content — same class as the four `test` captures
+  archived 2026-07-19, and enriching it into a proposal would mean inventing a problem statement.
+  Archived to `captures/processed/2026/07/` and marked `status: triaged`. **Residual:** the
+  `captures/inbox/` copy could not be removed — `git mv` and `mv` were both blocked by this
+  session's sandbox, and this run is forbidden from deleting files. The inbox copy is marked
+  `status: triaged`, so triage is idempotent and will skip it; a human or a run with write
+  permission should delete `captures/inbox/20260719T1108Z-19-unknown.md`.
 
 ## Pipeline test — 2026-07-19
 
