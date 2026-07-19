@@ -474,6 +474,28 @@ function Invoke-Autopilot {
     }
     if ($released) { Publish-TasksChange 'autopilot: release auto-blocked task(s) for retry' }
 
+    # --- Finish what is already in flight, BEFORE starting anything new. -------------------------
+    # A task at `status: review` is the most advanced work in the system: the code is written,
+    # committed, and pushed to its branch, and the only thing between it and landing is a verdict.
+    # `/next` already ranks review above codex for exactly this reason.
+    #
+    # Invoke-ReviewPhase existed but ONLY the explicit /review command ever called it -- the
+    # autopilot went straight to planning, so a built branch was invisible to /go and simply never
+    # advanced. Confirmed live: TASK-001 sat at `status: review` with correct code and 32/32 tests
+    # passing through repeated /go presses, each of which cheerfully reported "TRIAGED 1 new
+    # idea(s)" and planned MORE work on top of the unlanded branch. /go's own contract is "do
+    # whatever /next recommends", and it was not doing that.
+    #
+    # Returns after reviewing: one mission per /go, the same rule the build loop below follows.
+    $pendingReview = Get-TaskTable | Where-Object { $_.Status -eq 'review' } | Select-Object -First 1
+    if ($pendingReview) {
+        if (-not (Test-AutomationEnabled)) { return "Autopilot: automation disabled -- nothing done." }
+        if ($DryRun) { return "[DRY RUN] would review $($pendingReview.Id) ($($pendingReview.Title)) next." }
+        $rv = Invoke-ReviewPhase; $actions++
+        if ($rv.ExitCode -eq 2) { return "Autopilot stopped -- systemic: $($rv.Result)" }
+        return "REVIEWED $($pendingReview.Id): $($rv.Result)"
+    }
+
     # --- Plan once if there is approved work or untriaged captures but nothing build-ready yet. ---
     $planned = 0
     $unconvertedBefore = Get-UnconvertedBQCount
