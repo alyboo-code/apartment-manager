@@ -243,9 +243,36 @@ function Invoke-BuilderEngine {
         # LAUNCH VIA cmd.exe. `codex` is a real .exe, but `claude` is an npm shim (claude.ps1 / claude.cmd)
         # -- and System.Diagnostics.Process with UseShellExecute=false CANNOT start a script by bare name.
         # cmd.exe /c resolves the shim the same way a human typing `claude` in a terminal does.
-        $claudeArgs = '-p --allowedTools "Read" "Glob" "Grep" "Edit" "Write" "Bash(npm test)" "Bash(npm run *)" "Bash(node *)"'
-        if ($OnWindows) { $psi.FileName = 'cmd.exe'; $psi.Arguments = "/c claude $claudeArgs" }
-        else            { $psi.FileName = '/bin/sh'; $psi.Arguments = "-c ""claude $claudeArgs""" }
+        # The tool grants, as discrete argv entries. Several contain spaces AND parentheses --
+        # "Bash(npm test)" -- which is exactly what broke the old macOS path.
+        $claudeArgList = @(
+            '-p', '--allowedTools',
+            'Read', 'Glob', 'Grep', 'Edit', 'Write',
+            'Bash(npm test)', 'Bash(npm run *)', 'Bash(node *)'
+        )
+
+        if ($OnWindows) {
+            $claudeArgs = '-p --allowedTools "Read" "Glob" "Grep" "Edit" "Write" "Bash(npm test)" "Bash(npm run *)" "Bash(node *)"'
+            $psi.FileName = 'cmd.exe'; $psi.Arguments = "/c claude $claudeArgs"
+        } else {
+            # DO NOT route through `/bin/sh -c "claude $args"` here. Interpolating the grants into a
+            # double-quoted string collapses the nested quoting: sh then receives Bash(npm test)
+            # UNQUOTED and dies before claude ever starts --
+            #     sh: -c: line 0: syntax error near unexpected token `('
+            # which surfaces as "claude exec exited 2 after 0s" and reads like an auth or install
+            # failure rather than a quoting one. Confirmed live on a /go from Telegram.
+            #
+            # On macOS/Linux `claude` is a real executable with a shebang (not a Windows .cmd shim),
+            # so start it DIRECTLY by resolved path and pass argv entries individually. No shell, no
+            # quoting layer, nothing to escape.
+            $claudeExe = (Get-Command claude -ErrorAction SilentlyContinue).Source
+            if (-not $claudeExe) {
+                Write-Result "ABORTED: 'claude' vanished from PATH between preflight and launch."
+                exit 2
+            }
+            $psi.FileName = $claudeExe
+            foreach ($a in $claudeArgList) { [void]$psi.ArgumentList.Add($a) }
+        }
 
         # Codex reads AGENTS.md and knows this OS. Claude has to be told to -- so point it at the exact
         # same contract rather than inventing a second, drifting definition of the Implementer role.

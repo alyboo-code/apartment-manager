@@ -10,9 +10,7 @@
 
 ### TASK-001 — Make `loadDB()` surface read failures instead of rendering an empty database
 
-status: blocked
-blocker:
-  - auto: build stopped -- TASK-001 build FAILED: claude exec exited 2 after 0s. See claude-session.log for stdout/stderr. Marked blocked on task-001.
+status: codex
 owner: Codex
 source: BQ-001
 risk: High
