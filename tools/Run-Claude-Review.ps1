@@ -397,8 +397,26 @@ State which gate you picked, and why, at the end of the REVIEW.md entry.
     # planner, where Claude only received the head of the prompt. Piping via stdin delivers it intact
     # AND gives claude an immediate EOF (no ~3s stall).
     $psi = New-Object System.Diagnostics.ProcessStartInfo
+    # THE REVIEWER MAY NOT EDIT WHAT IT IS JUDGING.
+    #
+    # Run-Codex-Build.ps1 has long claimed "the reviewer (which has no Edit/Write on app code)
+    # judges the diff" -- but the grants were bare Edit and Write, unrestricted. The reviewer could
+    # rewrite index.html, or weaken a test, and the claim was simply untrue.
+    #
+    # The commit-scope guard below ($allowedPatterns) already halts if anything other than REVIEW.md
+    # or TASKS.md changes, so this is not the only line of defence -- but a reviewer that quietly
+    # FIXES a problem instead of reporting it is a second builder, and the halt only tells you
+    # afterwards, on a dirty branch. Deny it at the tool level so it never starts.
+    #
+    # tests/ matters at least as much as app code here: the verification gate runs npm test AFTER
+    # the reviewer commits, so a reviewer able to weaken a test could manufacture its own green.
+    #
+    # Edit(path) rules cover all file-editing tools -- there is deliberately no Write(...) rule; the
+    # CLI rejects those as unmatched (see Run-Codex-Build.ps1's note).
+    $reviewerDenyList = @('Edit(index.html)', 'Edit(tests/**)', 'Edit(playwright.config.js)')
+
     if ($OnWindows) {
-        $psi.FileName = 'cmd.exe'; $psi.Arguments = '/c claude -p --allowedTools "Read" "Glob" "Grep" "Edit" "Write" "Task" "Bash(git status)" "Bash(git diff *)" "Bash(git log *)"'
+        $psi.FileName = 'cmd.exe'; $psi.Arguments = '/c claude -p --allowedTools "Read" "Glob" "Grep" "Edit" "Write" "Task" "Bash(git status)" "Bash(git diff *)" "Bash(git log *)" --disallowedTools "Edit(index.html)" "Edit(tests/**)" "Edit(playwright.config.js)"'
     } else {
         # DO NOT route through `/bin/sh -c '...'` here. The grants contain both double quotes and
         # parentheses, and wrapping them in a PowerShell single-quoted string left sh with an
@@ -416,9 +434,10 @@ State which gate you picked, and why, at the end of the REVIEW.md entry.
             exit 2
         }
         $psi.FileName = $claudeExe
-        foreach ($a in @('-p', '--allowedTools',
-                         'Read', 'Glob', 'Grep', 'Edit', 'Write', 'Task',
-                         'Bash(git status)', 'Bash(git diff *)', 'Bash(git log *)')) {
+        foreach ($a in (@('-p', '--allowedTools',
+                          'Read', 'Glob', 'Grep', 'Edit', 'Write', 'Task',
+                          'Bash(git status)', 'Bash(git diff *)', 'Bash(git log *)',
+                          '--disallowedTools') + $reviewerDenyList)) {
             [void]$psi.ArgumentList.Add($a)
         }
     }
