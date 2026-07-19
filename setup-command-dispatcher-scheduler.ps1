@@ -31,6 +31,24 @@ $OnWindows = if ($null -eq $IsWindows) { $true } else { $IsWindows }
 
 $taskName   = "apartment-manager Command Dispatcher"
 
+# Homebrew's pwsh is a thin apphost that locates the .NET runtime through DOTNET_ROOT or a small set
+# of default paths -- none of which Homebrew installs into. An interactive shell usually gets away
+# with it, but launchd does NOT read the shell profile, so the plist must carry DOTNET_ROOT itself or
+# every scheduled run dies before PowerShell starts with "You must install .NET to run this
+# application." Prefer the version-independent `opt` symlink over the Cellar path a `dotnet` lookup
+# resolves to, so a `brew upgrade dotnet` doesn't silently break the plist.
+function Resolve-DotnetRoot {
+    @(
+        $env:DOTNET_ROOT
+        '/opt/homebrew/opt/dotnet/libexec'
+        '/usr/local/share/dotnet'
+        (Join-Path $HOME '.dotnet')
+        (Get-Command dotnet -ErrorAction SilentlyContinue) | ForEach-Object {
+            Join-Path (Split-Path (Split-Path (Get-Item $_.Source).ResolvedTarget -Parent) -Parent) 'libexec'
+        }
+    ) | Where-Object { $_ -and (Test-Path (Join-Path $_ 'shared/Microsoft.NETCore.App')) } | Select-Object -First 1
+}
+
 # =============================================================================================
 # macOS -- launchd. Not a translation of the Windows path: a genuinely different power model.
 #
@@ -53,6 +71,11 @@ if (-not $OnWindows) {
         Write-Host "FAILED: 'pwsh' is not on PATH. Install PowerShell 7:  brew install powershell" -ForegroundColor Red
         exit 1
     }
+    $dotnetRoot = Resolve-DotnetRoot
+    if (-not $dotnetRoot) {
+        Write-Host "FAILED: pwsh is installed but no .NET runtime was found. Install it:  brew install dotnet" -ForegroundColor Red
+        exit 1
+    }
 
     New-Item -ItemType Directory -Path $plistDir -Force | Out-Null
 
@@ -70,6 +93,8 @@ if (-not $OnWindows) {
     <string>-File</string>
     <string>$dispatchScript</string>
   </array>
+  <key>EnvironmentVariables</key>
+  <dict><key>DOTNET_ROOT</key><string>$dotnetRoot</string></dict>
   <key>StartInterval</key><integer>1800</integer>
   <key>RunAtLoad</key><true/>
   <key>StandardOutPath</key><string>/Users/alyssamarieborbon/Downloads/Vibe coding/apartment-manager/claude-session.log</string>
