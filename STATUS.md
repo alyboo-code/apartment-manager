@@ -59,3 +59,14 @@ failed refresh — rooms observed going 2 → 0 in a live session. Now folded in
    `.github/workflows/`, and no other host config in the repo — so the site-to-repo link could not
    be verified from the code. `CLAUDE.md` → Deploy carries an explicit UNVERIFIED warning. Confirm
    in the Netlify dashboard before any agent pushes unattended.
+
+## 2026-07-20 02:43 -- AUTOMATION HALTED: Apply-Decisions.ps1 threw an error: Cannot find path '/Users/alyssamarieborbon/Downloads/Vibe coding/apartment-manager/captures/decisions' because it does not exist.
+Investigate before the next scheduled run. Nothing further was committed, pushed, or notified this run.
+
+**RESOLVED 2026-07-20 (commit e9ecca6).** `captures/decisions/` had never existed — git does not
+track empty directories, and n8n would only have created it remotely on the first decision reply
+ever sent. It was missing in every clone since install; it only surfaced now because automation was
+disabled until today, so no planning run had ever reached that line. The folder now ships with a
+README, and `Apply-Decisions.ps1` treats a missing folder as "no decisions yet" rather than
+throwing. Verified both ways. Automation was never disabled by this — `Halt-Automation` ends the
+one run, it does not flip `$AUTOMATION_ENABLED`.
