@@ -28,6 +28,17 @@ $utf8      = New-Object System.Text.UTF8Encoding($false)
 
 $statusWord = @{ approve = 'approved'; park = 'parked'; reject = 'rejected'; clarify = 'clarify' }
 
+# A missing folder is "no decisions yet", not an error. Under $ErrorActionPreference = 'Stop' a bare
+# Get-ChildItem on a nonexistent path THROWS, and run-claude.ps1 turns any throw from this script
+# into a full Halt-Automation -- so every planning run dies before it triages anything.
+#
+# That is not hypothetical. captures/decisions/ had never been created (git does not track empty
+# directories, and n8n would only create it remotely on the first decision reply ever sent), so the
+# first planning run after automation was enabled halted with:
+#   "Apply-Decisions.ps1 threw an error: Cannot find path '.../captures/decisions'"
+# The folder now ships with a README to keep it in git; this check is the second line of defence.
+if (-not (Test-Path $decDir)) { Write-Host "No decisions folder yet ($decDir) -- nothing to apply."; return }
+
 $files = Get-ChildItem -Path $decDir -Filter '*.md' -File | Where-Object { $_.Name -ne 'README.md' }
 if (-not $files) { Write-Host 'No decision files to apply.'; return }
 
