@@ -147,6 +147,55 @@ function Invoke-NpmTest {
     $proc.ExitCode
 }
 
+# --------------------------------------------------------------------------------------------
+# INDEPENDENT VERIFICATION GATE
+#
+# Runs npm test on the branch and reports whether it genuinely verifies. Deliberately NOT an LLM
+# judgment: this is the one check in the whole pipeline that no model author, review, or explain
+# away. It either exits 0 or it does not.
+#
+# Previously this lived inside Invoke-AutoMerge, which meant it ran ONLY on the `done` path. The
+# gate was therefore inverted: reversible UI work got an objective test run, while RED-ZONE work
+# -- billing data, sync, auth -- landed `approved` on nothing but a model reading a diff and a
+# TEST_REPORT.md the BUILDER wrote about its own work. The most dangerous category had the weakest
+# verification. Now both landing paths run it.
+# --------------------------------------------------------------------------------------------
+function Test-BranchVerifies {
+    param([string]$BranchName)
+
+    $branchDirty = @(Invoke-Git -C $root status --porcelain)
+    if ($branchDirty.Count -gt 0) {
+        return @{ Ok = $false; Reason = "$BranchName had $($branchDirty.Count) uncommitted change(s) before tests ran." }
+    }
+
+    $testExit = Invoke-NpmTest
+    if ($testExit -ne 0) {
+        return @{ Ok = $false; Reason = "npm test FAILED on $BranchName (exit $testExit)." }
+    }
+
+    # A test run that mutates tracked files is not a verification -- it is a side effect.
+    $postTestDirty = @(Invoke-Git -C $root status --porcelain)
+    if ($postTestDirty.Count -gt 0) {
+        return @{ Ok = $false; Reason = "npm test changed $($postTestDirty.Count) tracked/visible file(s) on $BranchName." }
+    }
+
+    return @{ Ok = $true; Reason = '' }
+}
+
+# Force a task's status on the CURRENT branch. Used only when the verification gate contradicts the
+# reviewer -- see the call site for why that is a stop-and-ask, not a retry.
+function Set-TaskStatusOnBranch {
+    param([string]$TaskId, [string]$NewStatus, [string]$Note)
+
+    $text = Get-Content $tasksFile -Raw -Encoding UTF8
+    $new  = [regex]::Replace($text, "(?ms)(^###\s+$TaskId\b.*?^status:)[^\r\n]*", "`${1} $NewStatus")
+    if ($Note) {
+        $new = [regex]::Replace($new, "(?ms)(^###\s+$TaskId\b.*?^status:\s*$NewStatus\s*\r?\n)",
+                                "`${1}blocker:`n  - $(Get-Date -Format 'yyyy-MM-dd'): $Note`n")
+    }
+    [System.IO.File]::WriteAllText($tasksFile, $new, $utf8)
+}
+
 function Invoke-AutoMerge {
     param([string]$TaskId, [string]$BranchName)
 
@@ -155,21 +204,8 @@ function Invoke-AutoMerge {
         return "$TaskId APPROVED. Auto-merge disabled; merge $BranchName into main when you're ready."
     }
 
-    $branchDirty = @(Invoke-Git -C $root status --porcelain)
-    if ($branchDirty.Count -gt 0) {
-        return "Review passed, but auto-merge BLOCKED: $BranchName has $($branchDirty.Count) uncommitted change(s) after review. Main was not changed."
-    }
-
-    $testExit = Invoke-NpmTest
-    if ($testExit -ne 0) {
-        Invoke-Git -C $root checkout main | Out-Null
-        return "Review passed, but auto-merge BLOCKED: npm test failed on $BranchName (exit $testExit). Main was not changed."
-    }
-
-    $postTestDirty = @(Invoke-Git -C $root status --porcelain)
-    if ($postTestDirty.Count -gt 0) {
-        return "Review passed, but auto-merge BLOCKED: npm test changed $($postTestDirty.Count) tracked/visible file(s) on $BranchName. Main was not changed."
-    }
+    # npm test, the clean-tree check, and the post-test-dirty check already ran in the verification
+    # gate above this call -- for BOTH landing paths, not just this one. Not repeated here.
 
     Invoke-Git -C $root merge-base --is-ancestor main $BranchName | Out-Null
     if ($LASTEXITCODE -ne 0) {
@@ -487,6 +523,31 @@ $fallbackNote = if ($fallbackAttempted) { " (reviewed via $engineUsed -- fallbac
 # review with status correctly set to `done` on $branchName was misreported as "needs REWORK"
 # because $tasksFile was read after the branch switch.
 $newStatus = Get-TaskStatus -TaskId $taskId
+
+# --- Verification gate: BOTH landing paths, before either is honoured -------------------------
+# `done` auto-merges to production; `approved` is held for a human. Both are claims that the work
+# is correct, so both must survive an objective test run. Red-zone work in particular reaches a
+# human with an "APPROVED" label on it -- that label must not be able to outrun the test suite.
+#
+# A failure here is a CONTRADICTION, not a retry: the reviewer said this is good and the tests say
+# it is not. One of them is wrong and a machine cannot tell which, so the task stops and waits for
+# a person rather than being handed back for another automated attempt.
+if ($newStatus -eq 'done' -or $newStatus -eq 'approved') {
+    $verify = Test-BranchVerifies -BranchName $branchName
+    if (-not $verify.Ok) {
+        $note = "auto: reviewer set '$newStatus' but the verification gate disagreed -- $($verify.Reason)"
+        Set-TaskStatusOnBranch -TaskId $taskId -NewStatus 'blocked' -Note $note
+        Invoke-Git -C $root add -- 'TASKS.md'
+        Invoke-Git -C $root commit -m "${taskId}: verification gate overrode '$newStatus' -> blocked" | Out-Null
+        Invoke-Git -C $root push origin $branchName | Out-Null
+        Invoke-Git -C $root checkout main | Out-Null
+        Write-Result ("$taskId NOT $newStatus -- VERIFICATION GATE FAILED: $($verify.Reason) " +
+                      "The reviewer approved work the tests reject; marked blocked on $branchName for a human. " +
+                      "main was NOT changed.$fallbackNote$selfReviewNote")
+        exit 1
+    }
+}
+
 if ($newStatus -eq 'done') {
     Write-Result ((Invoke-AutoMerge -TaskId $taskId -BranchName $branchName) + $fallbackNote + $selfReviewNote)
 } elseif ($newStatus -eq 'codex') {
