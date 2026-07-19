@@ -111,7 +111,12 @@ $deniedPatterns = @(
     '^SELF_REVIEW\.md$', '^QA\.md$', '^PROMPTS\.md$', '^OPERATOR\.md$', '^GUIDE\.md$',
     '^AI-DEV-OS\.md$', '^SYSTEM-OVERVIEW\.md$', '^STATUS\.md$',
     '^docs/', '^planning/', '^captures/', '^library/', '^config/', '^\.claude/',
-    '^tools/', '^run-claude\.ps1$', '^setup-.*\.ps1$', '^n8n-.*\.json$'
+    '^tools/', '^run-claude\.ps1$', '^setup-.*\.ps1$', '^n8n-.*\.json$',
+    # tests/ is the referee. The builder gets --disallowedTools "Edit(tests/**)", but that alone is
+    # NOT airtight: the builder also holds Bash(node *), and node can write any file. This is the
+    # layer that actually holds -- a test change reaching the commit halts the build outright,
+    # whatever route it took to get there.
+    '^tests/', '^playwright\.config\.js$'
 )
 
 function Write-Result {
@@ -243,16 +248,33 @@ function Invoke-BuilderEngine {
         # LAUNCH VIA cmd.exe. `codex` is a real .exe, but `claude` is an npm shim (claude.ps1 / claude.cmd)
         # -- and System.Diagnostics.Process with UseShellExecute=false CANNOT start a script by bare name.
         # cmd.exe /c resolves the shim the same way a human typing `claude` in a terminal does.
+        # THE BUILDER MAY NOT TOUCH tests/.
+        #
+        # The test suite is the only check in this pipeline that is not a language model judging a
+        # language model's output. It was written before the build, by a different author, and it
+        # either passes or it does not. That is worth protecting mechanically rather than politely:
+        # TASK-001's prose said "do not edit anything under tests/" and the builder complied, but
+        # nothing enforced it -- a builder that could not make the code pass could always have made
+        # the tests stop asking.
+        #
+        # NOTE THE EXACT FORM. `Write(tests/**)` is NOT a real rule -- the CLI rejects it with
+        # "only Edit(path) rules are [matched by file permission checks]... Edit rules cover all
+        # file-editing tools". Adding it would ship a no-op that reads like protection. Verified by
+        # running claude against a scratch repo: Edit(tests/**) denied the test file while an edit
+        # to index.html in the same turn succeeded.
+        $claudeDenyList = @('Edit(tests/**)')
+
         # The tool grants, as discrete argv entries. Several contain spaces AND parentheses --
         # "Bash(npm test)" -- which is exactly what broke the old macOS path.
         $claudeArgList = @(
             '-p', '--allowedTools',
             'Read', 'Glob', 'Grep', 'Edit', 'Write',
-            'Bash(npm test)', 'Bash(npm run *)', 'Bash(node *)'
-        )
+            'Bash(npm test)', 'Bash(npm run *)', 'Bash(node *)',
+            '--disallowedTools'
+        ) + $claudeDenyList
 
         if ($OnWindows) {
-            $claudeArgs = '-p --allowedTools "Read" "Glob" "Grep" "Edit" "Write" "Bash(npm test)" "Bash(npm run *)" "Bash(node *)"'
+            $claudeArgs = '-p --allowedTools "Read" "Glob" "Grep" "Edit" "Write" "Bash(npm test)" "Bash(npm run *)" "Bash(node *)" --disallowedTools "Edit(tests/**)"'
             $psi.FileName = 'cmd.exe'; $psi.Arguments = "/c claude $claudeArgs"
         } else {
             # DO NOT route through `/bin/sh -c "claude $args"` here. Interpolating the grants into a
