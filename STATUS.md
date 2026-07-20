@@ -27,6 +27,12 @@ app — `docs/PROJECT.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/F
   session's sandbox, and this run is forbidden from deleting files. The inbox copy is marked
   `status: triaged`, so triage is idempotent and will skip it; a human or a run with write
   permission should delete `captures/inbox/20260719T1108Z-19-unknown.md`.
+- 2026-07-20 (second run) — 0 new captures. The only inbox file
+  (`20260719T1108Z-19-unknown`) is already `status: triaged` and already archived to
+  `captures/processed/2026/07/`, so it was skipped. No proposals written. **Residual unchanged:**
+  `git rm` of the leftover inbox copy was again blocked by the sandbox — the archived copy is the
+  authoritative one (it carries the `triaged:`/`outcome:` fields the inbox copy lacks), so removing
+  the inbox duplicate loses nothing. Still needs a human or a write-permitted run.
 
 ## Pipeline test — 2026-07-19
 
