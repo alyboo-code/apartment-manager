@@ -34,6 +34,15 @@ app — `docs/PROJECT.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/F
   authoritative one (it carries the `triaged:`/`outcome:` fields the inbox copy lacks), so removing
   the inbox duplicate loses nothing. Still needs a human or a write-permitted run.
 
+- 2026-07-21 — 0 new captures, 0 proposals out. The only inbox file
+  (`20260719T1108Z-19-unknown`) is already `status: triaged` and already archived to
+  `captures/processed/2026/07/`, so it was skipped per the idempotence rule. Plan conversion was
+  also a no-op: `planning/BUILD_QUEUE.md` holds one item (BQ-001) and it is already reflected in
+  `TASKS.md` as TASK-001 (`source: BQ-001`), so no new tasks were created and no existing task was
+  restatused. **Residual unchanged (third run):** the leftover inbox copy of
+  `20260719T1108Z-19-unknown.md` still needs deleting by a human or a write-permitted run — this
+  run is forbidden from deleting files. It is harmless: triage skips it every time.
+
 ## Pipeline test — 2026-07-19
 
 Exercised the automation directly rather than reading it. Results:
