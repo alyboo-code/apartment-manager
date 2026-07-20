@@ -1,5 +1,5 @@
 🌅 *apartment-manager — Morning Digest*
-Mon 20 Jul · 0 proposals waiting · 🎯 Objective: *Close the paths where a transient failure becomes permanent data loss*
+Tue 21 Jul · 0 proposals waiting · 🎯 Objective: *Close the paths where a transient failure becomes permanent data loss*
 
 —
 *Reply:* `Accept` (take all my recs) · `Approve all` · `Approve 14-19` · `Park 7` · `Reject 12`
