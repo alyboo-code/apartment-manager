@@ -218,6 +218,7 @@ When in doubt: prefer stopping over guessing.
 | `docs/FEATURES.md` | Feature catalog by tab and status | Feature existence and status |
 | `docs/DECISIONS.md` | ADR-lite rationale | Why key choices were made |
 | `docs/AI_OS_NOTES.md` | Append-only friction log — one line per workflow awkwardness noticed | Candidate improvements to the OS itself, pending promotion |
+| `docs/MAC_RUNTIME.md` | What the automation actually runs on this Mac — stack, launchd jobs, n8n bridge, gotchas | This machine's deployed runtime (macOS, not the Windows origin) |
 | `library/requirements/features/` | Immutable PRDs, one folder per feature | What to build for approved feature scope |
 | `AGENTS.md` | Codex standing instructions, loop, hard rules, templates | How Codex operates |
 
