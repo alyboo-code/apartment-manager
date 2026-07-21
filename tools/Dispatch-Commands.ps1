@@ -554,10 +554,27 @@ function Invoke-Autopilot {
         if ($r.Result -match '-> auto-review:') { $actions++ }
         if ($r.ExitCode -eq 2) { return "Autopilot stopped -- systemic: $($r.Result)" }   # preflight/dirty/wrong-branch
 
-        if ($r.Result -match '(?im)\bAPPROVED\b') {
+        if ($r.Result -match '(?im)auto-merged .*into main|merged .*into main, then pushed') {
+            # A genuine auto-merge that actually changed main. Only the `done` (reversible) path
+            # reaches this -- Invoke-AutoMerge fast-forwarded main and pushed it.
             Set-TaskStatus -TaskId $next.Id -NewStatus 'done'
-            Publish-TasksChange "autopilot: $($next.Id) approved and merged"
-            $built = [pscustomobject]@{ Id = $next.Id; P = $next.Priority; Outcome = 'approved' }
+            Publish-TasksChange "autopilot: $($next.Id) approved and auto-merged to main"
+            $built = [pscustomobject]@{ Id = $next.Id; P = $next.Priority; Outcome = 'merged' }
+        } elseif ($r.Result -match '(?im)\bAPPROVED\b') {
+            # Reviewed OK, but the code is NOT on main: a red-zone HELD task (D-032), auto-merge
+            # disabled, or an auto-merge that BLOCKED. All three contain the word APPROVED, and the
+            # old `\bAPPROVED\b` -> done + "merged to main" fired on every one of them.
+            #
+            # For a HELD red-zone task that silently DEFEATED the entire D-032 gate: the task got
+            # marked `done`, the branch was orphaned, main was never touched, and the phone reported
+            # a ship that never happened. This is exactly the path TASK-001 takes -- red-zone work
+            # is supposed to wait for a human /merge. Never claim a merge that did not occur.
+            #
+            # The reviewer already set `approved` on the branch. Reflect that on main so /next and
+            # /merge can see it, and hand off with the two-step merge instructions.
+            Set-TaskStatus -TaskId $next.Id -NewStatus 'approved'
+            Publish-TasksChange "autopilot: $($next.Id) approved, held for human /merge"
+            $built = [pscustomobject]@{ Id = $next.Id; P = $next.Priority; Outcome = 'approved-held' }
         } elseif ($r.Result -match '(?im)REWORK') {
             $prev = if ($next.Note -match 'strike (?<n>\d)/3') { [int]$Matches['n'] } else { 0 }
             $strike = $prev + 1
@@ -591,11 +608,15 @@ function Invoke-Autopilot {
     $remaining = @(Get-TaskTable | Where-Object { $_.Status -in @('codex','in-progress','todo') }).Count + (Get-UnconvertedBQCount)
     $out = @()
     if ($built) {
-        if ($built.Outcome -eq 'approved') {
-            $out += "APPROVED: $($built.Id) [P$($built.P)] built + reviewed + merged to main."
+        $branch = ($built.Id -replace 'TASK-','task-').ToLower()
+        if ($built.Outcome -eq 'merged') {
+            $out += "MERGED: $($built.Id) [P$($built.P)] built + reviewed + auto-merged to main."
+        } elseif ($built.Outcome -eq 'approved-held') {
+            $out += "APPROVED but HELD: $($built.Id) [P$($built.P)] built + reviewed -- red-zone, NOT merged."
+            $out += "main is untouched. Reply /merge $($built.Id) to see the diff, then /merge $($built.Id) yes to land it."
         } else {
             $out += "NEEDS YOU: $($built.Id) [P$($built.P)] -- $($built.Outcome)"
-            $out += "Branch $(($built.Id -replace 'TASK-','task-').ToLower()) left for inspection."
+            $out += "Branch $branch left for inspection."
         }
     } elseif ($waiting.Count -gt 0) {
         $out += "Nothing built -- top task(s) waiting on a merge."
