@@ -77,21 +77,50 @@ $groups = [ordered]@{
     'Reject'  = @{ icon = $g.bin;   label = 'RECOMMEND REJECT' }
 }
 
+# BUG 4 GUARD (ported): Telegram rejects a message over 4096 chars OUTRIGHT -- no partial send, just
+# "Bad Request: message is too long", and you receive nothing with no clue why. So build the item
+# list within a budget, break only at whole-item boundaries (never mid-string), and note the
+# remainder. Items arrive priority-ordered, so truncation drops the lowest-priority ones. 3500 leaves
+# headroom under 4096 for the footer, the truncation note, and the fact that emoji count as multiple
+# UTF-16 units in Telegram's own length check.
+$TELEGRAM_BUDGET = 3500
+
+# The footer is mandatory -- reserve room for it up front rather than risk dropping it.
+$footer = @(
+    $g.dash,
+    ('*Reply:* `Accept` (take all my recs) ' + $g.dot + ' `Approve all` ' + $g.dot + ' `Approve 14-19` ' + $g.dot + ' `Park 7` ' + $g.dot + ' `Reject 12`'),
+    ('Approved ' + $g.arrow + ' built next run. Silence ' + $g.arrow + ' nothing happens.')
+)
+$reserve = (($footer -join "`n").Length) + 90   # 90 = truncation-note headroom
+$budget  = $TELEGRAM_BUDGET - $reserve
+
+$curLen  = (($lines -join "`n").Length)   # header block already in $lines
+$skipped = 0
+$full    = $false
+
 foreach ($v in $groups.Keys) {
     $grp = @($items | Where-Object { $_.Verdict -eq $v })
     if ($grp.Count -eq 0) { continue }
-    $lines.Add("$($groups[$v].icon) *$($groups[$v].label) ($($grp.Count))*")
+    $groupHeader = "$($groups[$v].icon) *$($groups[$v].label) ($($grp.Count))*"
+    $addedHeader = $false
     foreach ($it in $grp) {
-        $tail = if ($it.Full -ne $it.Verdict) { " _($($it.Full))_" } else { "" }
-        $lines.Add("*$($it.Num)* $($g.dot) $($it.Title)")
-        $lines.Add("   $($g.arrow) $($it.Reason)$tail")
+        $tail  = if ($it.Full -ne $it.Verdict) { " _($($it.Full))_" } else { "" }
+        $block = @("*$($it.Num)* $($g.dot) $($it.Title)", "   $($g.arrow) $($it.Reason)$tail")
+        $cost  = ($block -join "`n").Length + 1 + $(if (-not $addedHeader) { $groupHeader.Length + 1 } else { 0 })
+        if ($full -or ($curLen + $cost -gt $budget)) { $full = $true; $skipped++; continue }
+        if (-not $addedHeader) { $lines.Add($groupHeader); $curLen += $groupHeader.Length + 1; $addedHeader = $true }
+        foreach ($l in $block) { $lines.Add($l) }
+        $curLen += ($block -join "`n").Length + 1
     }
+    if ($addedHeader) { $lines.Add(""); $curLen += 1 }
+}
+
+if ($skipped -gt 0) {
+    $lines.Add("$($g.dash) _+$skipped more, too many to fit -- see planning/PROPOSALS.md_")
     $lines.Add("")
 }
 
-$lines.Add($g.dash)
-$lines.Add('*Reply:* `Accept` (take all my recs) ' + $g.dot + ' `Approve all` ' + $g.dot + ' `Approve 14-19` ' + $g.dot + ' `Park 7` ' + $g.dot + ' `Reject 12`')
-$lines.Add('Approved ' + $g.arrow + ' built next run. Silence ' + $g.arrow + ' nothing happens.')
+foreach ($l in $footer) { $lines.Add($l) }
 
 $digest = ($lines -join "`n")
 

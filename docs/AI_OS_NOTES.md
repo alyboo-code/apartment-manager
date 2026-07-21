@@ -17,3 +17,12 @@
   Windows/Task Scheduler runtime, but this machine runs macOS/launchd. Nothing documented the
   actual deployed stack until `docs/MAC_RUNTIME.md`. Candidate: a porting note in the generic OS
   docs pointing macOS installs at MAC_RUNTIME, or a `runtime:` field the installer stamps.
+
+- 2026-07-22 — Ported 4 automation fixes from the sibling Windows repos (bugs 1-4): no-op build
+  guard, held-not-merged classification, lock liveness, digest length cap. See the commits.
+- 2026-07-22 — SEPARATE FINDING (not yet fixed): the morning digest shows "0 proposals" even when
+  proposals are pending. `Generate-Digest.ps1` parses the Decision line with a regex requiring a
+  BOLDED `**Decision:**`, but triage writes `- ▶ Decision:` (unbolded, with a marker glyph). No
+  proposal ever matches, so PROP-002..006 never appear in the digest. Same class as the planning-
+  file format-contract drift already logged. Needs a decision: align the digest regex to the
+  triage format, or change triage to emit the bolded form. Out of scope for the ported-bug batch.

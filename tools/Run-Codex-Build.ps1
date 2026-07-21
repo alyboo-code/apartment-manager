@@ -464,6 +464,29 @@ if ($anyBlocked.Count -gt 0) {
 }
 
 if ($anyReview.Count -gt 0) {
+    # BUG 1 GUARD (ported from the sibling repos): a build can flip a task to `status: review` while
+    # producing NO actual work -- a "claimed but empty" fix. Before handing off, require real
+    # evidence on the branch. A genuine build changes app code AND, per AGENTS.md's Definition of
+    # Done, CHANGELOG.md + TEST_REPORT.md; a run whose ONLY committed change was the status field in
+    # TASKS.md did nothing. Chaining that into review burns a review pass, and if the task's tests
+    # happen to already pass it could even reach `done` on an empty diff (lever 1 only catches it
+    # when the tests actually fail). $changed was captured pre-commit above and still holds the set.
+    $evidence = @($changed | Where-Object {
+        $_ -notmatch '^TASKS\.md$' -and $_ -notmatch '^captures/replies/OUTBOX\.md$' -and $_ -notmatch '^\.last-phase-result\.txt$'
+    })
+    if ($evidence.Count -eq 0) {
+        foreach ($t in $anyReview) {
+            Set-TaskStatus -TaskId $t.Id -NewStatus 'blocked' -BlockerNote "$engineUsed exec marked this task review but committed nothing beyond TASKS.md -- no app code, no CHANGELOG.md, no TEST_REPORT.md. A claimed-but-empty fix; not handed to review. See claude-session.log."
+        }
+        Invoke-Git -C $root add TASKS.md
+        Invoke-Git -C $root diff --cached --quiet
+        if ($LASTEXITCODE -ne 0) { Invoke-Git -C $root commit -m "$($first.Id): review claimed with no evidence, marked blocked" | Out-Null }
+        Invoke-Git -C $root push origin $branchName | Out-Null
+        Invoke-Git -C $root checkout main | Out-Null
+        Write-Result "$($first.Id) build produced NO evidence -- only TASKS.md changed, yet it marked itself review. Treated as a no-op and blocked on $branchName. See claude-session.log."
+        exit 1
+    }
+
     $buildMsg = "$($first.Id) build reached REVIEW ($($anyReview.Count) of $($tracked.Count) tracked task(s)) after $([int]$duration.TotalSeconds)s$fallbackNote, pushed to $branchName."
     Add-Content -Path $logFile -Value "[Run-Codex-Build] $buildMsg"
     # Auto-chain: no separate manual /review step needed after a clean build. Stay on $branchName for

@@ -151,7 +151,17 @@ function Get-StatusReply {
     $lastLine = Get-Content "$root\claude-session.log" -Tail 1 -ErrorAction SilentlyContinue
     $codexReady  = if (Test-Path $tasksFile) { @(Select-String -Path $tasksFile -Pattern '^status:\s*codex\s*$').Count } else { 0 }
     $reviewReady = if (Test-Path $tasksFile) { @(Select-String -Path $tasksFile -Pattern '^status:\s*review\s*$').Count } else { 0 }
-    $lockState = if (Test-Path $lockFile) { 'BUSY (a run is in progress)' } else { 'idle' }
+    # Report lock age and liveness so a long-but-normal build is distinguishable from a hang, and a
+    # dead lock (crashed run) does not read as BUSY forever.
+    $lockState = if (Test-Path $lockFile) {
+        $lockAge = [int]((Get-Date) - (Get-Item $lockFile).LastWriteTime).TotalMinutes
+        $lp = (Get-Content $lockFile -First 1 -ErrorAction SilentlyContinue)
+        if ($lp -and ($lp -match '^\d+$') -and (Get-Process -Id ([int]$lp) -ErrorAction SilentlyContinue)) {
+            "BUSY (PID $lp, ${lockAge}m$(if ($lockAge -ge 45) { ' -- possible hang' }))"
+        } else {
+            "idle (stale lock from dead PID '$lp', ${lockAge}m -- will clear next tick)"
+        }
+    } else { 'idle' }
     @"
 Automation: $enabled - Branch: $branch ($tree) - $lockState
 Last log line: $lastLine
@@ -673,10 +683,26 @@ function Set-AutomationFlag {
 #     twice-daily scheduled run or another dispatcher invocation. ---
 if (Test-Path $lockFile) {
     $age = (Get-Date) - (Get-Item $lockFile).LastWriteTime
-    if ($age.TotalHours -ge 2) {
+    # The lock's first line is the PID of the run that created it (written below). Prefer LIVENESS
+    # over a flat timeout: a dead process's lock should never block a live run, and a legitimately
+    # long build should not be cut off just because a fixed clock ran out. (Get-Process -Id is
+    # cross-platform -- works the same under pwsh on macOS.)
+    $lockPid = (Get-Content $lockFile -First 1 -ErrorAction SilentlyContinue)
+    $alive   = $lockPid -and ($lockPid -match '^\d+$') -and (Get-Process -Id ([int]$lockPid) -ErrorAction SilentlyContinue)
+
+    if (-not $alive) {
+        # Crashed, killed, or exited without cleanup. Clear immediately, whatever its age.
+        Add-Content -Path $logFile -Value "[Dispatch] stale lock cleared: PID '$lockPid' not running (lock was $([int]$age.TotalMinutes) min old)."
+        Remove-Item $lockFile -Force
+    } elseif ($age.TotalMinutes -ge 45) {
+        # Alive but has held the lock far past any normal build -- treat as hung. Clear so work can
+        # resume, but NEVER kill the process here; only an explicit /stop does that (see the /stop
+        # handler). Surface it to the phone via OUTBOX -- the reply-relay push at end of run sends it.
+        Add-Content -Path $logFile -Value "[Dispatch] lock held $([int]$age.TotalMinutes) min by live PID $lockPid -- suspected hang, clearing (process NOT killed)."
+        Write-Reply -Id "lockclear-$(Get-Date -Format 'yyyyMMddHHmmss')" -Text "Cleared a stuck automation lock: PID $lockPid held it $([int]$age.TotalMinutes) min (suspected hang). The process was NOT killed -- send /stop if a run is genuinely stuck."
         Remove-Item $lockFile -Force
     } else {
-        Write-Host "Busy: another automation run is in progress (lock is $([int]$age.TotalMinutes) min old). Exiting without processing commands."
+        Write-Host "Busy: another automation run (PID $lockPid) in progress, lock $([int]$age.TotalMinutes) min old. Exiting without processing commands."
         exit 0
     }
 }
