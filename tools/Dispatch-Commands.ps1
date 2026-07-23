@@ -709,6 +709,24 @@ if (Test-Path $lockFile) {
 if (-not $DryRun) { "$PID`n$(Get-Date -Format o)" | Out-File -FilePath $lockFile -Encoding ascii }
 
 try {
+    # Clean a stray STATUS.md before ANYTHING else touches the tree.
+    #
+    # STATUS.md is automation-owned (the builder is denied it) and is never part of a task's code
+    # diff -- but the overnight run can leave it written-but-uncommitted (e.g. Halt-Automation appends
+    # to it and exits without committing). A lone dirty STATUS.md then quietly wrecked the
+    # command-triggered flow three ways: it made the --ff-only pull below refuse if origin also
+    # touched STATUS; it got carried onto task-<id> at checkout; and it aborted every red-zone review
+    # preflight with "branch has N uncommitted change(s)". Confirmed live -- it blocked the first real
+    # merge of TASK-001. Commit (and best-effort push) it out of the way. STRICTLY a lone STATUS.md;
+    # any other dirty file is left exactly as before for a human to resolve.
+    $preDirty = @(Invoke-Git -C $root status --porcelain)
+    if ($preDirty.Count -eq 1 -and $preDirty[0] -match 'STATUS\.md$') {
+        Invoke-Git -C $root add STATUS.md
+        Invoke-Git -C $root commit -m "chore: commit automation-written STATUS.md (keep tree clean for red-zone ops)" | Out-Null
+        Invoke-Git -C $root push origin main | Out-Null   # best effort; the --ff-only pull below reconciles either way
+        Add-Content -Path $logFile -Value "[Dispatch] committed a stray uncommitted STATUS.md before processing commands."
+    }
+
     # n8n pushes new command files straight to origin/main -- this local clone never sees them until
     # something pulls. Without this, the scheduled task ran successfully every 2 minutes but always
     # found "no new commands" because the file only existed on GitHub, not on disk here (confirmed

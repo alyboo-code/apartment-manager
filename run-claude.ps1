@@ -43,6 +43,15 @@ function Halt-Automation {
 Investigate before the next scheduled run. Nothing further was committed, pushed, or notified this run.
 "@
     Add-Content -Path "$projectPath\STATUS.md" -Value $statusEntry
+    # Commit the halt note we just wrote. Leaving STATUS.md written-but-uncommitted was the root of a
+    # recurring failure: the stray dirty file later aborted red-zone reviews and blocked the --ff-only
+    # pull. The halt itself changes nothing else, so committing ONLY STATUS.md here is safe and keeps
+    # the tree clean for the next run. Best-effort -- a halt must still exit even if git is the problem.
+    try {
+        & git -C $projectPath add STATUS.md 2>$null
+        & git -C $projectPath commit -m "automation halt: $Reason" 2>$null | Out-Null
+        & git -C $projectPath push origin main 2>$null | Out-Null
+    } catch { Add-Content -Path $logFile -Value "Halt-Automation: could not commit STATUS.md ($_)" }
     Add-Content -Path $logFile -Value "=== Session ended: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') (HALTED) ==="
     exit 1
 }
