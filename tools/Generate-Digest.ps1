@@ -49,9 +49,16 @@ $items = foreach ($b in $blocks) {
         Write-Warning "Proposal $($b.Groups['id'].Value) has no Decision line - omitted from digest."
         continue
     }
-    $mDec = [regex]::Match($body, '\*\*[^*\n]*?Decision:\s*(?<full>.+?)\*\*\s*(?<reason>.+?)(\r?\n|$)')
+    # Read the canonical Decision line as triage/audit/humans actually write it:
+    #   - ▶ Decision: Approve — <reason>          (the ▶ glyph and any bold are optional)
+    # The old regex demanded a BOLDED **...Decision: X** with the reason outside the bold. Nothing
+    # emits that -- not the contract template, not PROP-001, not the audit -- so EVERY proposal was
+    # dropped and the digest always reported "0 proposals waiting". `[^\r\n]*?` absorbs the "▶ " (or
+    # "**▶ ", or nothing) without depending on the glyph's encoding; the verdict is whatever precedes
+    # the first spaced dash, the reason is the rest of the line.
+    $mDec = [regex]::Match($body, '(?m)^-\s*[^\r\n]*?Decision:\s*(?<full>.+?)\s+\p{Pd}\s+(?<reason>.+?)\s*$')
     if (-not $mDec.Success) { continue }
-    $full    = $mDec.Groups['full'].Value.Trim().TrimEnd('.')   # "Approve" or "Approve (Option A - descope)"
+    $full    = $mDec.Groups['full'].Value.Trim().TrimEnd('.','*',' ')   # "Approve" or "Approve (Option A - descope)"
     $verdict = ([regex]::Match($full, '^\w+')).Value            # Approve | Park | Reject | Clarify
     [pscustomobject]@{
         Num     = ($b.Groups['id'].Value -replace 'PROP-0*', '')

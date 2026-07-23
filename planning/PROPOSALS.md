@@ -70,7 +70,7 @@
 - why now vs later: Now. It is cheap, and it is the mechanism by which the app's own reminder
   leads the landlord into mis-dating a bill.
 - AI-recommended priority: P1
-- status:      pending
+- **status:** pending
 
 ### PROP-003 — Quick Entry's Total Due disagrees with the bill it actually saves
 - ▶ Decision: Approve — the fast path shows the landlord one number and writes a different one.
@@ -108,7 +108,7 @@
   distrust the screen, and the discrepancy is silent — the saved bill is simply different from the
   one they approved.
 - AI-recommended priority: P1
-- status:      pending
+- **status:** pending
 
 ### PROP-004 — Bill Sheet omits moved-out tenants who still owe for that month
 - ▶ Decision: Approve — the caretaker's collection sheet is missing balances that are still owed.
@@ -141,7 +141,7 @@
 - why now vs later: Now. Effort is one line, and every month it ships is a month a real balance can
   go uncollected because it was never on the sheet.
 - AI-recommended priority: P1
-- status:      pending
+- **status:** pending
 
 ### PROP-005 — Background refresh silently discards meter readings typed into the Billing grid
 - ▶ Decision: Approve — leaving the app for ten seconds mid-entry wipes unsaved readings with no
@@ -181,7 +181,7 @@
 - why now vs later: Now. It costs the landlord the single most tedious task in the month, silently,
   and the re-entry it forces is exactly the behavior North-star #1 warns about.
 - AI-recommended priority: P1
-- status:      pending
+- **status:** pending
 
 ### PROP-006 — Every period selector defaults to the current month, but the work is always last month
 - ▶ Decision: Approve — seven selectors default to a month the landlord is usually not working on,
@@ -221,7 +221,7 @@
   underlying confusion about which month the landlord means, and fixing one without the other
   leaves the seam visible.
 - AI-recommended priority: P2
-- status:      pending
+- **status:** pending
 
 ## Proposal contract
 *(the structured shape triage produces — keep this shape so downstream stages stay swappable)*
@@ -244,7 +244,7 @@
 - ambiguity:   <none | what's unclear>
 - why now vs later: <why it belongs in the next sprint, or why it should wait>
 - AI-recommended priority: P0..P3   (goal-adjusted, not raw priority)
-- status:      pending
+- **status:** pending
 ```
 *`▶ Decision` is the recommended action; `status` is your recorded outcome. They differ on purpose —
 the AI recommends, you decide, UNLESS Decision is Approve and Risk is Low, in which case the decision
