@@ -134,7 +134,9 @@ path and the `db` assignment — squarely in the Hard Rule 4 red zone. It must n
 ### TASK-002 — Fix "Go to Billing": correct target month, target room, and nav highlight
 
 owner: codex
-status: codex
+status: blocked
+blocker:
+  - auto: build stopped -- TASK-002 build FAILED: claude exec exited 1 after 97s. See claude-session.log for stdout/stderr. Marked blocked on task-002.
 source: BQ-002
 priority: P1
 depends-on: none
