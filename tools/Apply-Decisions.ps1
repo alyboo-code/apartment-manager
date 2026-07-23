@@ -112,9 +112,15 @@ foreach ($f in $files) {
         $applied += "  $propId -> $newStatus  ($title)"
 
         if ($current -eq 'approve') {
-            $mPri = [regex]::Match($mBlock.Groups['body'].Value, 'AI-recommended priority:\*\*\s*\**(?<p>P\d)')
+            # Read priority and the Decision reason as proposals are ACTUALLY written -- unbolded
+            # `- AI-recommended priority: P1` and `- ▶ Decision: Approve — <reason>`. The old regexes
+            # demanded bold (`priority:**`, `**...Decision: X**`), which the contract template and the
+            # audit never emit -- so every queued item got `priority: P?` and its build line fell back
+            # to the title instead of the one-line reason. Same bolding-contract mismatch as the
+            # digest fix.
+            $mPri = [regex]::Match($mBlock.Groups['body'].Value, 'AI-recommended priority:\s*\**(?<p>P\d)')
             $pri  = if ($mPri.Success) { $mPri.Groups['p'].Value } else { 'P?' }
-            $mDec = [regex]::Match($mBlock.Groups['body'].Value, '\*\*[^*\n]*?Decision:\s*.+?\*\*\s*(?<r>.+?)(\r?\n|$)')
+            $mDec = [regex]::Match($mBlock.Groups['body'].Value, '(?m)^-\s*[^\r\n]*?Decision:\s*[^\r\n]+?\s+\p{Pd}\s+(?<r>.+?)\s*$')
             $what = if ($mDec.Success) { $mDec.Groups['r'].Value.Trim() } else { $title }
             $bqId = 'BQ-{0:000}' -f $nextBq; $nextBq++
             $bqAdds += @"
@@ -137,8 +143,17 @@ if ($applied.Count -eq 0) { Write-Host 'No new decisions found.'; return }
 # Splice BQ items in under "## Approved sprint", dropping the empty placeholder.
 if ($bqAdds.Count -gt 0) {
     $block = ($bqAdds -join "`n`n")
-    # Drop whatever "empty" placeholder is there (original `*(empty…)*` or the builder's `_…empty…Awaiting…_`).
-    $placeholder = '(?im)^[_*].*(empty|awaiting next sprint).*$'
+    # Drop the "nothing here yet" placeholder if present -- e.g. `*Empty.*` or a fully-italicised
+    # "awaiting next sprint" line -- and put the new items where it was; otherwise append at the end.
+    #
+    # The regex MUST match only a whole-line placeholder, never a content line. The old
+    # `^[_*].*(empty|awaiting next sprint).*$` matched ANY bold/italic line containing "empty" --
+    # and in a data-integrity app "empty" is everywhere. It ate BQ-001's own
+    # "**Wanted.** ...present an empty or..." line and wedged five new items into the middle of it.
+    # Now the line must START and END with markup with only the placeholder phrase between, so a
+    # real content sentence (which ends in prose, not `*`/`_`) can never match. If nothing matches,
+    # the append-at-end fallback is always safe.
+    $placeholder = '(?im)^\s*[_*]+\s*(?:empty|awaiting next sprint|no approved items)[^\r\n]*?[_*]+\s*$'
     if ($bqText -match $placeholder) {
         $bqText = $bqText -replace $placeholder, $block
     } else {
