@@ -250,6 +250,27 @@ th .sort-arrow { font-size: .625rem; margin-left: .25rem; color: var(--p); }
   </div>
 </div>
 
+<!-- READ FAILURE SCREEN — Hard Rule 4.
+     A failed read must never be presented as an empty database, so when loadDB()
+     fails we hide the app entirely behind this rather than let the landlord look
+     at zero rooms and start re-entering data that is still sitting in Supabase.
+     Same shape as the login screen above; driven by showReadErrorScreen(). -->
+<div id="read-err-screen" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:#fff;border-radius:1rem;padding:2rem;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center">
+    <div style="font-size:2.5rem">⚠️</div>
+    <h2 style="margin:.5rem 0 .25rem;color:#1e1b4b;font-size:1.375rem">Could not load your data</h2>
+    <p id="read-err-msg" style="color:#6b7280;font-size:.875rem;margin:0 0 1rem"></p>
+    <div id="read-err-detail" style="color:#dc2626;font-size:.8125rem;margin-bottom:.75rem;min-height:1rem;word-break:break-word"></div>
+    <button id="read-err-retry" onclick="retryLoad()" style="width:100%;padding:.75rem;background:#4f46e5;color:#fff;border:none;border-radius:.5rem;font-size:1rem;font-weight:700;cursor:pointer;transition:background .2s"
+      onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+      Retry
+    </button>
+    <p style="text-align:center;font-size:.75rem;color:#9ca3af;margin-top:1.25rem;margin-bottom:0">
+      Nothing was loaded, so nothing was changed. Your records are still on the server.
+    </p>
+  </div>
+</div>
+
 <!-- APP ROOT -->
 <div id="app-root">
 
@@ -561,8 +582,62 @@ async function initAuth() {
 }
 
 function showLoginScreen() {
+  hideReadErrorScreen();
   document.getElementById('app-root').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
+}
+
+// ---- Read-failure screen (Hard Rule 4) -------------------------------------
+// Blocking by design. The empty screen is not the damage — what the landlord
+// does next is: re-entering rooms and bills, each getting a fresh
+// crypto.randomUUID() that cannot collide with the real rows still in Supabase,
+// leaving a permanently duplicated database. So there must be no way to reach
+// the normal views after a failed load.
+
+function showReadErrorScreen(err) {
+  document.getElementById('app-root').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'none';
+  // D-003 applies to reads too: a permanent rejection must never be dressed up
+  // as a transient blip. "Try again in a moment" against a missing column is the
+  // same lie as "Saved offline" against a write the server refused.
+  document.getElementById('read-err-msg').textContent = err.offline
+    ? 'We could not reach the server. Check your connection, then try again.'
+    : 'The server refused the request. Retrying will not help until this is fixed.';
+  document.getElementById('read-err-detail').textContent = err.offline ? '' : (err.detail || '');
+  const btn = document.getElementById('read-err-retry');
+  btn.disabled = false;
+  btn.textContent = 'Retry';
+  document.getElementById('read-err-screen').style.display = 'flex';
+}
+
+function hideReadErrorScreen() {
+  const el = document.getElementById('read-err-screen');
+  if (!el || el.style.display === 'none') return; // never touched on a clean boot
+  el.style.display = 'none';
+  if (_session) document.getElementById('app-root').style.display = '';
+}
+
+// Retry re-runs the whole boot path, so a recovered read lands exactly where a
+// successful first attempt would have — no half-initialised app.
+function retryLoad() {
+  const btn = document.getElementById('read-err-retry');
+  btn.disabled = true;
+  btn.textContent = 'Retrying…';
+  init();
+}
+
+// Shared by both boot paths. Returns true only if `db` was actually populated;
+// a false return means the caller must NOT render.
+async function loadDBOrShowFailure() {
+  try {
+    await loadDB();
+  } catch (e) {
+    if (!e || !e.isReadFailure) throw e;
+    showReadErrorScreen(e);
+    return false;
+  }
+  hideReadErrorScreen();
+  return true;
 }
 
 function hideLoginScreen() {
@@ -578,7 +653,7 @@ async function doLogin() {
   const { error } = await _sb.auth.signInWithPassword({ email, password: pass });
   if (error) { errEl.textContent = error.message; return; }
   hideLoginScreen();
-  await loadDB();
+  if (!await loadDBOrShowFailure()) return; // never render an empty app over a failed read
   renderAll();
   init();
 }
@@ -595,9 +670,37 @@ let db;
 // All rows carry a user_id = auth user's id so each user sees only their data.
 // Settings stored as a single row keyed by user_id.
 
+// Tell apart "could not reach the server" from "the server refused the request",
+// mirroring classifyWriteError() on the read side (D-003). There is no TypeError
+// to key on here: reads RESOLVE with { data: null, error }, so supabase-js has
+// already caught fetch's throw and handed us an error object either way. An
+// unreachable server arrives with no PostgREST code and a fetch-shaped message;
+// a genuine rejection (bad column, RLS denial) carries a code.
+function classifyReadError(err) {
+  if (!navigator.onLine) return { offline: true };
+  const message = (err && (err.message || err.details)) || 'unknown error';
+  if (!(err && err.code) && /failed to fetch|networkerror|load failed|network request failed/i.test(message)) {
+    return { offline: true };
+  }
+  return { offline: false, message: message + (err && err.hint ? ' — ' + err.hint : '') };
+}
+
+// Build the error loadDB() throws. If ANY table was rejected outright we report
+// the whole load as a rejection — the more serious signal wins, because telling
+// the user to retry a permanent failure is exactly the trap D-003 closed.
+function readFailure(failed) {
+  const classified = failed.map(([, r]) => classifyReadError(r && r.error));
+  const rejection = classified.find(c => !c.offline);
+  const e = new Error('loadDB failed: ' + failed.map(([t]) => t).join(', '));
+  e.isReadFailure = true;
+  e.tables = failed.map(([t]) => t);
+  e.offline = !rejection;
+  e.detail = rejection ? rejection.message : '';
+  return e;
+}
+
 async function loadDB() {
   const uid_user = _session.user.id;
-  db = newDB();
 
   const [rooms, bills, payments, expenses, maintenance, mortgages, settings] = await Promise.all([
     _sb.from('rooms').select('*').eq('user_id', uid_user),
@@ -609,14 +712,34 @@ async function loadDB() {
     _sb.from('settings').select('*').eq('user_id', uid_user).maybeSingle(),
   ]);
 
-  db.rooms       = rooms.data       || [];
-  db.bills       = bills.data       || [];
-  db.payments    = payments.data    || [];
-  db.expenses    = expenses.data    || [];
-  db.maintenance = maintenance.data || [];
-  // mortgages may be missing on older backups
-  db.mortgages   = (typeof mortgages !== 'undefined' && mortgages.data) ? mortgages.data : [];
-  db.settings    = settings.data    ? settings.data.config : newDB().settings;
+  // Supabase RESOLVES a failed query as { data: null, error } — it does not
+  // throw, so try/catch around this never fires and `rooms.data || []` quietly
+  // turns a dropped connection into an empty array. Check every one of the seven
+  // BEFORE any of them is used. (Hard Rule 4.)
+  const results = [
+    ['rooms', rooms], ['bills', bills], ['payments', payments], ['expenses', expenses],
+    ['maintenance', maintenance], ['mortgages', mortgages], ['settings', settings],
+  ];
+  const failed = results.filter(([, r]) => !r || r.error);
+  if (failed.length) throw readFailure(failed);
+
+  // Only now is it safe to touch the global. Built off to the side and swapped in
+  // whole, because a PARTIAL swap — six good tables and one empty one — is the
+  // same lie in a smaller box: every bill for every tenant vanishes from the UI
+  // while the app still looks healthy.
+  const next = newDB();
+  next.rooms       = rooms.data       || [];
+  next.bills       = bills.data       || [];
+  next.payments    = payments.data    || [];
+  next.expenses    = expenses.data    || [];
+  next.maintenance = maintenance.data || [];
+  next.mortgages   = mortgages.data   || [];
+  // A null settings row is a legitimate empty read (a brand-new account), so
+  // defaults are correct HERE — but only because a settings *error* threw above.
+  // Falling back on failure would silently reset the electric rate to 17 and bill
+  // at the wrong rate (Hard Rule 7).
+  next.settings    = settings.data ? settings.data.config : newDB().settings;
+  db = next;
 
   migrateBillSnapshots();
 }
@@ -4337,16 +4460,38 @@ async function refreshFromCloud() {
     renderAll();
     _lastRefresh = Date.now();
   } catch (e) {
+    // loadDB() now throws instead of swapping in empty arrays, so this catch can
+    // finally fire. Deliberately NOT the blocking screen: this runs on focus and
+    // visibilitychange, and the landlord is mid-task with good data on screen.
+    // Leave `db` and the rendered UI exactly as they are and say so quietly.
     console.error('Refresh from cloud failed:', e);
+    if (e && e.isReadFailure) {
+      toast(e.offline ? '⚠ Could not refresh — showing your last loaded data'
+                      : '⚠ Could not refresh (' + e.detail + ') — showing your last loaded data', 't-err');
+    }
+    // Throttle failures like successes, or every window focus re-fires all seven
+    // queries and another toast.
+    _lastRefresh = Date.now();
   } finally {
     _refreshing = false;
   }
 }
 
+// Bound once. init() re-runs on retry after a failed load, and these would
+// otherwise stack up a new listener per attempt.
+let _cloudListenersBound = false;
+function bindCloudListeners() {
+  if (_cloudListenersBound) return;
+  _cloudListenersBound = true;
+  window.addEventListener('online', () => { syncLocalBackup(); refreshFromCloud(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshFromCloud(); });
+  window.addEventListener('focus', refreshFromCloud);
+}
+
 async function init() {
   const authed = await initAuth();
   if (!authed) return; // login screen shown by initAuth
-  await loadDB();
+  if (!await loadDBOrShowFailure()) return; // blocking error state, not an empty app
   // try sync of any locally-stored unsynced changes
   try { await syncLocalBackup(); } catch (e) { console.error('Initial sync failed:', e); }
   updateSyncStatus();
@@ -4357,9 +4502,7 @@ async function init() {
   renderDashboard();
   startTableLabeler();
   _lastRefresh = Date.now();
-  window.addEventListener('online', () => { syncLocalBackup(); refreshFromCloud(); });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshFromCloud(); });
-  window.addEventListener('focus', refreshFromCloud);
+  bindCloudListeners();
 }
 
 window.addEventListener('DOMContentLoaded', init);
