@@ -2,18 +2,22 @@
 
 > Where the project is right now. The first thing any agent reads.
 
-**Milestone:** Make a failed read impossible to mistake for an empty database (BQ-001)
-**Active task:** T-001 — `loadDB()` must surface read failures
+**Milestone:** Fix the billing-correctness defects the code audit surfaced (BQ-002…BQ-006)
+**Active task:** TASK-002 — Fix "Go to Billing": correct target month, room, and nav highlight
 **Owner:** Codex
-**Blockers:** none. `npm test` runs — 26 passing, 6 failing, and the 6 are TASK-001's acceptance
-criteria in executable form (`tests/read-failures.spec.js`). Codex can pick this up.
+**Blockers:** none. TASK-002…TASK-006 are Ready (`status: codex`) in priority order; `/go` builds
+TASK-002 first. Each is Risk High / Solo and lands `approved` (held for human merge) per D-032.
 
 ## Last shipped
 
-*Nothing yet.* No application code has changed. 2026-07-19: the AI Dev OS was seeded against this
-app — `docs/PROJECT.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/FEATURES.md`,
-`docs/DECISIONS.md` (D-001..D-004), and `CLAUDE.md`'s app-specific sections including Hard Rules
-3-7. Four Telegram plumbing-test captures were archived to `captures/processed/2026/07/`.
+**TASK-001 — `loadDB()` read-failure fix — merged to `main`** (commit 3aa21db). A failed read can no
+longer masquerade as an empty database; `refreshFromCloud()` no longer wipes on-screen data on a
+failed background refresh. Closed BQ-001 / the first Current-Objective path.
+
+Earlier: 2026-07-19 the AI Dev OS was seeded against this app — `docs/PROJECT.md`,
+`docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/FEATURES.md`, `docs/DECISIONS.md` (D-001..D-004),
+and `CLAUDE.md`'s app-specific sections including Hard Rules 3-7. Four Telegram plumbing-test
+captures were archived to `captures/processed/2026/07/`.
 
 ## Triage log
 
@@ -51,6 +55,18 @@ app — `docs/PROJECT.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/F
   `20260719T1108Z-19-unknown.md` still needs deleting by a human or a write-permitted run; it is
   harmless, triage skips it every time. **New finding this run:** a human "Approve" reply was
   consumed without approving anything — see "Needs human verification" #2 below.
+
+- 2026-07-24 — 0 new captures, 0 proposals out; **plan conversion did real work.** Triage was a
+  no-op: the only inbox file (`20260719T1108Z-19-unknown`) is already `status: triaged` and
+  archived, so it was skipped per the idempotence rule. The 2026-07-24 digest reply approved
+  PROP-002…PROP-006, which reached `planning/BUILD_QUEUE.md` as BQ-002…BQ-006 (this unblocks the
+  situation flagged in "Needs human verification" #2). None were reflected in `TASKS.md` yet, so
+  this run converted each into an atomic Codex task: **TASK-002…TASK-006** (`status: codex`), placed
+  in priority order (BQ-002/003/004/005 = P1, BQ-006 = P2) with `depends-on` set (TASK-005→TASK-001,
+  TASK-006→TASK-002). `PLAN.md` retargeted to the new milestone ("Fix the billing-correctness
+  defects the code audit surfaced"). All five are Risk High / Solo / land `approved` per D-032. No
+  existing task was restatused. **Residual unchanged:** the leftover inbox copy still needs a human
+  or write-permitted run to delete; triage skips it every time.
 
 ## Pipeline test — 2026-07-19
 
