@@ -10,7 +10,7 @@
 
 ### TASK-001 — Make `loadDB()` surface read failures instead of rendering an empty database
 
-status: review
+status: done
 owner: Codex
 source: BQ-001
 risk: High
