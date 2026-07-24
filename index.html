@@ -1270,6 +1270,14 @@ function showTab(name, btn) {
   if (renders[name]) renders[name]();
 }
 
+// Find a nav button by the tab it opens, via its showTab('<tab>', …) onclick.
+// Looking it up by target — not a hardcoded index — keeps the mapping correct
+// if the nav is ever reordered (a wrong index once highlighted the wrong tab).
+function navBtn(tab) {
+  return [...document.querySelectorAll('nav button')]
+    .find(b => (b.getAttribute('onclick') || '').includes(`showTab('${tab}'`));
+}
+
 // ======================== OVERDUE REMINDERS ========================
 // Due date = 5th of the month after the billing period (same rule as printed bills).
 // A bill is flagged once it's unpaid 7+ days past that due date.
@@ -1375,7 +1383,7 @@ function renderNotices() {
     notices.push(`
       <div style="background:#fff7ed;border:1px solid #fed7aa;border-left:4px solid var(--warn);border-radius:var(--r);padding:.75rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;font-size:.875rem">
         <span>🔧 <strong>${openIssues.length} open repair issue${openIssues.length > 1 ? 's' : ''}</strong>${overdueIssues.length ? ` — <span style="color:var(--err);font-weight:700">${overdueIssues.length} overdue 7+ days</span>` : ''}</span>
-        <button class="btn btn-out btn-sm" style="margin-left:auto" onclick="showTab('maintenance', document.querySelector('nav button:nth-child(7)'))">View Maintenance</button>
+        <button class="btn btn-out btn-sm" style="margin-left:auto" onclick="showTab('maintenance', navBtn('maintenance'))">View Maintenance</button>
       </div>`);
   }
   const checkMonth = (y, m, label, urgent) => {
@@ -1390,7 +1398,7 @@ function renderNotices() {
     notices.push(`
       <div style="background:${urgent ? '#fef2f2' : '#eff6ff'};border:1px solid ${urgent ? '#fecaca' : '#bfdbfe'};border-left:4px solid ${urgent ? 'var(--err)' : 'var(--p)'};border-radius:var(--r);padding:.75rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;font-size:.875rem">
         <span>🧾 No <strong>${label}</strong> bill yet for Room ${missing.map(r => r.number).join(', ')}.</span>
-        <button class="btn ${urgent ? 'btn-err' : 'btn-p'} btn-sm" style="margin-left:auto" onclick="goGenerateBill()">Go to Billing</button>
+        <button class="btn ${urgent ? 'btn-err' : 'btn-p'} btn-sm" style="margin-left:auto" onclick="goGenerateBill(null, '${p}')">Go to Billing</button>
       </div>`);
   };
   const prevM = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -1496,11 +1504,29 @@ function renderDashboard() {
   restoreSort('tbl-dash-rooms');
 }
 
-function goGenerateBill(roomId) {
-  // Navigate to billing tab and set focus
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('nav button')[2].classList.add('active');
-  showTab('billing', document.querySelectorAll('nav button')[2]);
+// Jump to the Billing tab on the RIGHT month. The period must be set before we
+// render, because a wrong period sends the landlord to enter this month's
+// readings against last month's bill — and computeBill() carries prevBalance
+// from prevPer(period), so a wrong period corrupts the balance chain (Hard Rule 7).
+//   - From a dashboard NOTICE: the notice passes its own already-computed period.
+//   - From a dashboard ROOM ROW ("Generate", passes roomId): carry the month the
+//     dashboard is showing (dash-m/dash-y), and scroll to that room's card.
+function goGenerateBill(roomId, period) {
+  const p = period || getPer('dash-m', 'dash-y');
+  const { y, m } = perParts(p);
+  document.getElementById('bill-m').value = m;
+  document.getElementById('bill-y').value = y;
+
+  // Activate Billing by looking the nav button up by its showTab('billing', …)
+  // target, never a hardcoded index — index 2 was Tenants, so the panel showed
+  // while the Tenants tab read active. showTab() re-renders Billing for the
+  // period we just set.
+  showTab('billing', navBtn('billing'));
+
+  if (roomId) {
+    const card = document.getElementById('bill-room-' + roomId);
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 // ======================== ROOMS RENDER ========================
