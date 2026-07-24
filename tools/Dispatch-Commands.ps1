@@ -480,6 +480,11 @@ function Invoke-Autopilot {
             if ((($Matches['dep'] -replace 'TASK-', 'task-').ToLower()) -in $merged) { Set-TaskStatus -TaskId $t.Id -NewStatus 'codex'; $released = $true }
         } elseif ($t.Note -match 'strike (?<n>\d)/3' -and [int]$Matches['n'] -lt 3) {
             Set-TaskStatus -TaskId $t.Id -NewStatus 'codex'; $released = $true
+        } elseif ($t.Note -match '(?i)quota|session limit') {
+            # A quota/session-limit block is transient -- the cap resets on a clock. Release it so
+            # this /go retries; if the cap is still down it just re-blocks the same way (one cheap
+            # ~90s fail per press, never an infinite loop), and the first /go after the reset builds.
+            Set-TaskStatus -TaskId $t.Id -NewStatus 'codex'; $released = $true
         }
     }
     if ($released) { Publish-TasksChange 'autopilot: release auto-blocked task(s) for retry' }

@@ -101,7 +101,11 @@ function Invoke-Git {
 function Test-QuotaExhaustionSignal {
     param([string]$Text)
     if ([string]::IsNullOrEmpty($Text)) { return $false }
-    $Text -match '(?i)(rate.?limit(?:ed)?|quota|usage limit|\b429\b|insufficient.?(?:quota|credits?|balance)|too many requests|resource.?exhausted)'
+    # "session limit" / "hit your session limit ... resets 8:30am" is Claude Code's own phrasing when
+    # a subscription's usage cap is reached -- confirmed live (TASK-002 built 97s then hit it). It is a
+    # transient capacity ceiling, not a task failure, so it must be recognised here or a quota block
+    # gets treated as a real bug and parked for a human until someone notices.
+    $Text -match '(?i)(rate.?limit(?:ed)?|quota|usage limit|session limit|hit your (?:usage|session) limit|limit[^.\r\n]*resets|\b429\b|insufficient.?(?:quota|credits?|balance)|too many requests|resource.?exhausted)'
 }
 
 # DENY-list (not allow-list): Codex's legitimate surface (app code) is open-ended, so this blocks the
@@ -420,15 +424,22 @@ if ($violations.Count -gt 0) {
 #     retry it later on its own, capped the same way a rework retry is -- never a silent infinite loop. ---
 if ($codexExit -ne 0) {
     if ($changed.Count -gt 0) { Invoke-Git -C $root add -- $changed; Invoke-Git -C $root commit -m "$($first.Id): partial progress before $engineUsed exec failure" | Out-Null }
-    $bothFailedOnQuota = $fallbackAttempted -and ((Test-QuotaExhaustionSignal $attempt.Stdout) -or (Test-QuotaExhaustionSignal $attempt.Stderr))
-    $note = if ($fallbackAttempted) {
+    # A quota/session-limit failure is transient -- it clears when the cap resets -- so the task
+    # should retry itself, NOT wait for a human. Keying this on $fallbackAttempted was wrong: a
+    # Claude-only install (no codex to fall back to) never attempts a fallback, so its quota failures
+    # could never self-heal and every session-limit hit parked a task for a human. Key it on the
+    # actual signal in the last attempt's output instead, whether or not a fallback happened.
+    $quotaHit = (Test-QuotaExhaustionSignal $attempt.Stdout) -or (Test-QuotaExhaustionSignal $attempt.Stderr)
+    $note = if ($quotaHit) {
+        "quota/session limit -- $engineUsed exec exited $codexExit after $([int]$duration.TotalSeconds)s; will retry automatically once the cap resets. See claude-session.log."
+    } elseif ($fallbackAttempted) {
         "$engineUsed exec (fallback after $fallbackReason) ALSO exited $codexExit after $([int]$duration.TotalSeconds)s. See claude-session.log for stdout/stderr."
     } else {
         "$engineUsed exec exited $codexExit after $([int]$duration.TotalSeconds)s. See claude-session.log for stdout/stderr."
     }
     foreach ($t in $tracked) {
         if ((Get-TaskStatusById $t.Id) -eq 'codex') {
-            Set-TaskStatus -TaskId $t.Id -NewStatus 'blocked' -BlockerNote $note -AutoBlock:$bothFailedOnQuota
+            Set-TaskStatus -TaskId $t.Id -NewStatus 'blocked' -BlockerNote $note -AutoBlock:$quotaHit
         }
     }
     Invoke-Git -C $root add TASKS.md
@@ -436,7 +447,7 @@ if ($codexExit -ne 0) {
     if ($LASTEXITCODE -ne 0) { Invoke-Git -C $root commit -m "$($first.Id): build failed (exit $codexExit), marked blocked" | Out-Null }
     Invoke-Git -C $root push origin $branchName | Out-Null
     Invoke-Git -C $root checkout main | Out-Null
-    Write-Result "$($first.Id) build FAILED: $note Marked blocked on $branchName.$(if ($bothFailedOnQuota) { ' (auto-retryable once quota clears -- /go will retry on its own.)' })"
+    Write-Result "$($first.Id) build FAILED: $note Marked blocked on $branchName.$(if ($quotaHit) { ' (auto-retryable once the cap resets -- /go will retry on its own.)' })"
     exit 1
 }
 
