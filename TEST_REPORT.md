@@ -39,3 +39,55 @@ untested: no automated assertion of the DOM click-through was committed (see abo
 are covered by code review + full-suite regression, not by a new dedicated Playwright case.
 manual (interactive browser): not performed — this run has no interactive browser; the served-app
 verification I attempted was blocked as described.
+
+## TASK-003 · 2026-07-24
+suite: npm test (Playwright, full suite)
+result: 32 passed, 0 failed
+reconciliation model chosen: `saveQuickEntry()` keeps omitting `computeBill()`'s `away` arg, so
+`computeBill()` infers away from the saved bill (regular room, `water === 0`). The preview `qeCalc()`
+was aligned TO that fallback (Hard Rule 7 — `computeBill()`'s arithmetic is not touched).
+
+Hard Rule 7 — worked numeric examples (settings: elec rate 17, water 150/person, wifi 300).
+Both were also executed against the real served index.html through the stubbed Supabase client
+(scratchpad Playwright script, same route-interception + stub as tests/support/fixtures.js).
+
+(a) Room 101 with a transferred balance AND a one-off extra, NOT away.
+    Existing 2026-07 bill: carryIn = 500, extras = [{amount: 300}], water = 150 (≠0 → not away),
+    wifi = 300 (→ WiFi on), persons = 2. Prev reading locked = bill-1.currReading = 150.
+    Landlord types current = 200.
+      kWh          = 200 − 150 = 50
+      electricity  = round(50 × 17) = 850
+      rent         = 5000
+      water        = round(2 × 150) = 300
+      wifi         = 300
+      prevBalance  = bill-1 (2026-06) balance = 0
+      carryIn      = 500
+      extrasTotal  = 300
+      ─────────────────────────────────────────────
+      total        = 5000 + 850 + 300 + 300 + 0 + 500 + 300 = 7250
+    qeCalc() preview = ₱7,250.00.  saveQuickEntry() → computeBill() totalDue = 7250.  EQUAL.
+    (Before the fix, qeCalc omitted carryIn + extras and would have shown 6450 — understated by 800.)
+    Runtime check: {"preview":7250,"savedTotalDue":7250,"savedWater":300,"savedWifi":300} → preview==saved.
+
+(b) Room 101 marked away (regular room whose saved 2026-07 bill has water = 0, wifi = 0),
+    no carryIn, no extras, persons = 2. Prev locked = 150. Types current = 200.
+      kWh          = 50 → electricity = 850
+      rent         = 5000
+      water        = 0   (awayFlag true)
+      wifi         = 0   (awayFlag true)
+      prevBalance  = 0
+      ─────────────────────────────────────────────
+      total        = 5000 + 850 + 0 + 0 + 0 = 5850
+    qeCalc() preview = ₱5,850.00.  saveQuickEntry() → computeBill() totalDue = 5850, water = 0.  EQUAL.
+    (Before the fix, qeCalc showed water = 300 and wifi = 0-or-300 → previewed 6150+ while the saved
+    bill was 5850: preview charged water the tenant was never billed.)
+    Runtime check: {"preview":5850,"savedTotalDue":5850,"savedWater":0,"savedWifi":0} → preview==saved.
+
+untested: no NEW committed Playwright assertion — tests/ is write-protected in this run (Edit and
+Write to tests/ both return "directory denied by permission settings"). The task explicitly allows
+adding a test and its verification step requests one in tests/billing-math.spec.js; that spec could
+not be committed here. Compensating evidence: the scratchpad runtime run above (real index.html +
+real stub) and the full 32-test regression. A write-permitted run should land the committed
+assertion in tests/billing-math.spec.js.
+manual (interactive browser): not performed — no interactive browser in this run; the served-app
+reconciliation above stands in for it.

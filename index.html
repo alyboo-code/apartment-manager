@@ -3478,14 +3478,23 @@ function qeCalc(roomId) {
   if (!curr) { totalEl.textContent = '—'; brkEl.textContent = ''; warnEl.textContent = ''; qeGrand(); return; }
   if (curr < prev) { totalEl.textContent = '—'; brkEl.textContent = ''; warnEl.textContent = '⚠ < prev'; qeGrand(); return; }
 
+  // Preview must equal the bill saveQuickEntry() → computeBill() writes. That means
+  // reading the SAME carryIn/extras off the existing bill AND inferring "away" the
+  // SAME way: saveQuickEntry() omits computeBill()'s away arg, so computeBill() falls
+  // back to the saved state (regular room whose bill has water === 0). Mirror that
+  // fallback here — Quick Entry gains no away control, it only stops over-reporting.
+  const existing = getBill(roomId, p);
+  const awayFlag = !!existing && !caretaker && (+existing.water === 0);
   const kWh     = curr - prev;
   const elec    = Math.round(kWh * elecRateFor(getPer('bill-m', 'bill-y')));
-  const water   = caretaker ? 0 : Math.round(persons * db.settings.water);
-  const wifiAmt = caretaker ? 0 : (wifiOn ? db.settings.wifi : 0);
+  const water   = (caretaker || awayFlag) ? 0 : Math.round(persons * db.settings.water);
+  const wifiAmt = (caretaker || awayFlag) ? 0 : (wifiOn ? db.settings.wifi : 0);
   const prevBill = getBill(roomId, prevPer(p));
   const prevBal  = prevBill ? prevBill.balance : 0;
+  const carryIn  = existing ? (+existing.carryIn || 0) : 0; // transferred/opening balance, as computeBill()
+  const extrasTotal = existing && Array.isArray(existing.extras) ? existing.extras.reduce((s, e) => s + (+e.amount || 0), 0) : 0; // manual extras, as computeBill()
   const rent     = caretaker ? 0 : (+room.rent || 0);
-  const total    = rent + elec + water + wifiAmt + prevBal;
+  const total    = rent + elec + water + wifiAmt + prevBal + carryIn + extrasTotal;
 
   totalEl.textContent = fmt(total);
   brkEl.textContent = caretaker

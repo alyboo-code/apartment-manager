@@ -38,3 +38,36 @@ deviations:
     content blocker, and this run completed the task. Only `status` and that dead blocker line
     changed in TASKS.md.
 → status set to `review` in TASKS.md
+
+## TASK-003 — done (branch: task-003)
+changed:
+  - index.html → `qeCalc()` — Quick Entry's live preview now totals the SAME components
+    `computeBill()` / `updateBillRow()` do: added `carryIn` (= `existing.carryIn`) and `extrasTotal`
+    (= sum of `existing.extras[].amount`) read off the room's existing bill for the period, and made
+    water/wifi honor the away state by inferring `awayFlag` the same way `computeBill()`'s fallback
+    does (regular room whose saved bill has `water === 0`). ~+10 loc.
+  - `saveQuickEntry()` — deliberately unchanged. It still omits `computeBill()`'s 7th `away` arg, so
+    `computeBill()` uses its saved-state fallback. The chosen reconciliation was to align the preview
+    TO that fallback (Hard Rule 7: never alter the arithmetic in `computeBill()`), not to feed a new
+    away arg in. Stated per the task's "pick whichever makes preview == saved and state which".
+  - `qeGrand()` — unchanged: it sums the displayed `qe-total-*` values, which are now correct, so the
+    grand total follows automatically.
+mapping to acceptance criteria:
+  - AC-1 preview includes carryIn + extrasTotal → new `carryIn`/`extrasTotal` terms in the `total`.
+  - AC-2 away room previews water = 0 / wifi = 0 → `awayFlag` gates both, mirroring the saved fallback.
+  - AC-3 per-room preview == saved `totalDue`; `qeGrand()` == sum of saved totals → verified at runtime
+    (7250 and 5850, both preview == saved).
+  - AC-4 byte-for-byte unchanged for no-carryIn/no-extras/not-away rooms → the three new terms are all
+    0 in that case; full 32-test regression stays green.
+tests: npm test → 32 passed, 0 failed (full regression). The task permits ADDING a test and its
+  verification step asks for a Playwright assertion in tests/billing-math.spec.js, but tests/ is
+  write-denied in this run (Edit and Write both blocked) — see TEST_REPORT.md deviations. In its
+  place I drove the real served index.html through the identical stubbed-Supabase setup from a
+  scratchpad Playwright script and recorded the runtime reconciliation.
+blockers: none
+deviations:
+  - Could not add the intended Playwright assertion to tests/billing-math.spec.js: the runner
+    write-protects tests/ this run. Substituted a scratchpad runtime check (real app, same stub)
+    proving preview == saved for both scenarios; a write-permitted run should add the committed
+    assertion.
+→ status set to `review` in TASKS.md
