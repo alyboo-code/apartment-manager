@@ -597,20 +597,19 @@ function Invoke-Autopilot {
             Set-TaskBlockedAuto -TaskId $next.Id -Note "review rework, strike $strike/3 -- $why"
             Publish-TasksChange "autopilot: $($next.Id) rework strike $strike/3"
             $built = [pscustomobject]@{ Id = $next.Id; P = $next.Priority; Outcome = "rework (strike $strike/3): $why" }
-        } elseif ($r.Result -match '(?im)review FAILED|Left at status:\s*review') {
+        } elseif ($r.Result -match '(?im)review (FAILED|PAUSED)|Left at status:\s*review|Still at status:\s*review') {
             # The BUILD succeeded and handed off; the review ENGINE could not run (quota, launch
-            # failure, crash). That is not a verdict, and Run-Claude-Review.ps1 deliberately leaves
-            # the task at `status: review` precisely so the next /review or /go picks it up again.
-            #
-            # Overwriting that with `blocked` here contradicted it -- and "build stopped" notes are
-            # NOT in this autopilot's auto-release set (only merge-waits and rework strikes are), so
-            # a transient reviewer failure permanently parked a perfectly good branch until a human
-            # noticed. Confirmed live: TASK-001 built correctly in 405s with all 32 tests passing,
-            # then got marked blocked because of a shell-quoting bug in the reviewer's launch.
-            #
-            # Leave the status alone. Report it and move on.
+            # failure, crash). That is not a verdict. Run-Claude-Review.ps1 leaves the task at
+            # `status: review` on its BRANCH -- but main (which the autopilot reads to decide what to
+            # do next) was never told, so it still shows `codex`. Left as-is, the next /go's
+            # review-in-flight check sees no review task on main and REBUILDS this task from scratch
+            # -- throwing away a good build and burning the same quota that just ran out. Confirmed
+            # live on TASK-003 (built 416s, review paused on the usage cap). Reflect `review` on main
+            # so the next /go RESUMES the review instead of rebuilding.
+            Set-TaskStatus -TaskId $next.Id -NewStatus 'review'
+            Publish-TasksChange "autopilot: $($next.Id) built, review deferred -- set review so /go resumes it"
             $built = [pscustomobject]@{ Id = $next.Id; P = $next.Priority
-                                        Outcome = "built OK, but the review could not run -- left at status: review for automatic retry" }
+                                        Outcome = "built OK, but the review could not run (usage cap or engine hiccup) -- at status: review; the next /go resumes the review, it will not rebuild" }
         } else {   # exit 1: blocked / test-fail / no-progress on this task
             Set-TaskBlockedAuto -TaskId $next.Id -Note "build stopped -- $(($r.Result -replace '\s+',' ').Trim())"
             Publish-TasksChange "autopilot: $($next.Id) build stopped"
