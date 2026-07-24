@@ -165,7 +165,7 @@ function Get-StatusReply {
     @"
 Automation: $enabled - Branch: $branch ($tree) - $lockState
 Last log line: $lastLine
-Codex-ready: $codexReady - Review-ready: $reviewReady
+Build-ready: $codexReady - Review-ready: $reviewReady
 "@
 }
 
@@ -182,8 +182,8 @@ function Get-NextAction {
         @{ s = 'blocked';     owner = 'you (Claude)'; action = 'status'; note = 'blocked -- needs your decision, see the blocker note in TASKS.md' }
         @{ s = 'review';      owner = 'Claude';        action = 'review' }
         @{ s = 'approved';    owner = 'you';           action = 'status'; note = 'approved -- inspect older pre-auto-merge state' }
-        @{ s = 'codex';       owner = 'Codex';         action = 'build' }
-        @{ s = 'in-progress'; owner = 'Codex';         action = 'build' }
+        @{ s = 'codex';       owner = 'Claude';        action = 'build' }
+        @{ s = 'in-progress'; owner = 'Claude';        action = 'build' }
         @{ s = 'todo';        owner = 'Claude';        action = 'run' }
     )
     foreach ($p in $priority) {

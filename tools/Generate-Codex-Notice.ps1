@@ -50,8 +50,8 @@ if ($items.Count -eq 0) {
     $notice = $NONE_PLACEHOLDER
 } else {
     $lines = New-Object System.Collections.Generic.List[string]
-    $lines.Add("$($g.robot) *Codex-Ready Tasks ($($items.Count))*")
-    $lines.Add('Run Codex locally and say "Continue" to pick these up.')
+    $lines.Add("$($g.robot) *Ready to Build ($($items.Count))*")
+    $lines.Add('Send /go to build these -- one per /go.')
     $lines.Add('')
     foreach ($it in $items) {
         $lines.Add("*$($it.Id)* $($g.dot) $($it.Title)")
