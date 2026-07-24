@@ -134,7 +134,9 @@ path and the `db` assignment — squarely in the Hard Rule 4 red zone. It must n
 ### TASK-002 — Fix "Go to Billing": correct target month, target room, and nav highlight
 
 owner: codex
-status: codex
+status: blocked
+blocker:
+  - auto: build stopped -- TASK-002 build reached BLOCKED (4 of 5 tracked task(s)) after 562s. See the blocker note(s) in TASKS.md on task-002.
 source: BQ-002
 priority: P1
 depends-on: none
