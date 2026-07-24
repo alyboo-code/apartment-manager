@@ -78,6 +78,16 @@ captures were archived to `captures/processed/2026/07/`.
   **Residual unchanged:** the leftover inbox copy of `20260719T1108Z-19-unknown.md` still needs a
   human or write-permitted run to delete; triage skips it every time.
 
+- 2026-07-25 — 0 new captures, 0 proposals out; both steps no-ops. Triage: both inbox files
+  (`20260719T1108Z-19-unknown`, `20260723T2300Z-58-unknown`) are already `status: triaged` and
+  already archived to `captures/processed/2026/07/`, so both were skipped per the idempotence rule.
+  Plan conversion: `planning/BUILD_QUEUE.md` holds BQ-001…BQ-006 and every one is already reflected
+  in `TASKS.md` (TASK-001…TASK-006, `source: BQ-00N`), so no task was created or restatused; the
+  pending `status: codex` tasks (TASK-004 P1, TASK-005 P1, TASK-006 P2) are already in ascending
+  priority order, so no reorder was needed. **Residual unchanged:** the leftover inbox copy of
+  `20260719T1108Z-19-unknown.md` still needs a human or write-permitted run to delete; triage skips
+  it every time.
+
 ## Pipeline test — 2026-07-19
 
 Exercised the automation directly rather than reading it. Results:
