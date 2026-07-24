@@ -80,7 +80,9 @@ function Invoke-Git {
 function Test-QuotaExhaustionSignal {
     param([string]$Text)
     if ([string]::IsNullOrEmpty($Text)) { return $false }
-    $Text -match '(?i)(rate.?limit(?:ed)?|quota|usage limit|\b429\b|insufficient.?(?:quota|credits?|balance)|too many requests|resource.?exhausted)'
+    # Keep in sync with Run-Codex-Build.ps1's copy. "session limit ... resets <time>" is Claude
+    # Code's own wording when a subscription cap is reached -- confirmed live on the TASK-003 review.
+    $Text -match '(?i)(rate.?limit(?:ed)?|quota|usage limit|session limit|hit your (?:usage|session) limit|limit[^.\r\n]*resets|\b429\b|insufficient.?(?:quota|credits?|balance)|too many requests|resource.?exhausted)'
 }
 
 # D-048 self-review disclosure: which engine's commit message built this branch, per the convention
@@ -502,7 +504,15 @@ if ($attempt.ExitCode -ne 0) {
     # /go invocation picks the same task up automatically once whichever engine(s) failed recover, with
     # no separate auto:/strike-count machinery needed on this side.
     $failNote = if ($fallbackAttempted) { "$engineUsed review (fallback after $fallbackReason) ALSO exited $($attempt.ExitCode)" } else { "$engineUsed review exited $($attempt.ExitCode)" }
-    Write-Result "$taskId review FAILED: $failNote. Left at status: review for automatic retry on the next /review or /go. See claude-session.log."
+    # A usage-cap hit is not a failure -- it is a pause. Say so, so an unattended run does not send a
+    # "review FAILED" alarm to the phone for something that will simply resume when the cap resets.
+    # Either way the task stays `status: review`, so the next /review or /go retries it automatically.
+    $quotaHit = (Test-QuotaExhaustionSignal $attempt.Stdout) -or (Test-QuotaExhaustionSignal $attempt.Stderr)
+    if ($quotaHit) {
+        Write-Result "$taskId review PAUSED -- $engineUsed hit its usage cap ($failNote). Still at status: review; the next /go after the cap resets reviews it automatically. See claude-session.log."
+    } else {
+        Write-Result "$taskId review FAILED: $failNote. Left at status: review for automatic retry on the next /review or /go. See claude-session.log."
+    }
     exit 1
 }
 
