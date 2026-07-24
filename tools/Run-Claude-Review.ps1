@@ -42,9 +42,10 @@ $OnWindows = if ($null -eq $IsWindows) { $true } else { $IsWindows }
 
 # WHICH ENGINE REVIEWS, BY DEFAULT. D-048 makes this a preference, not a hard requirement -- see the
 # fallback logic below. Claude is the stronger default here for the opposite reason codex is the
-# default builder: Claude's review gets the Guardian Gauntlet (two read-only subagent specialists via
-# the Task tool); Codex has no equivalent, so a Codex review is always a strictly weaker fallback,
-# never a peer option to pick from freely.
+# default builder. (Historically Claude's review also ran a "Guardian Gauntlet" of two read-only
+# sub-agent specialists via the Task tool; that was removed for this Claude-only, quota-limited
+# install -- three LLM passes per review did not fit the usage cap. The review now does the same
+# security + acceptance checks inline in one pass, with npm test as the separate objective gate.)
 $PREFERRED_REVIEWER = 'claude'
 if ($PREFERRED_REVIEWER -notin @('claude', 'codex')) { $PREFERRED_REVIEWER = 'claude' }
 
@@ -351,35 +352,35 @@ You may ONLY write to REVIEW.md and TASKS.md (only $TaskId's status field) -- do
 application source file, test, or config. Do not attempt git commit or git push (not available to
 you this run).
 
-GUARDIAN GAUNTLET -- run this BEFORE you decide anything. It is not optional.
+REVIEW CHECKS -- do these YOURSELF, in this single pass. DO NOT spawn sub-agents; the Task tool is
+not available this run. (Rationale: this is a Claude-only, quota-limited install where the same
+account builds and reviews. Three LLM passes per review -- one main plus two sub-agent specialists --
+did not fit the usage cap and stranded reviews half-done. One thorough pass does. The two checks
+below are the SAME substance those specialists provided, folded into your own review.)
 
-Using the Task tool, run these two specialists against the branch diff:
+  1. SECURITY: audit the diff for vulnerabilities, secret leakage, and unsafe handling of user data.
+     Pay special attention to CLAUDE.md's Hard Rules -- persistence, the read path, user_id scoping
+     on every query, write-status honesty, and bill/payment arithmetic.
+  2. ACCEPTANCE: verify the diff ACTUALLY satisfies $TaskId's acceptance criteria in TASKS.md --
+     traced criterion by criterion, not "looks plausible".
 
-  1. security-guardian -- audit the diff for vulnerabilities, secret leakage, and unsafe handling
-     of user data.
-  2. quality-guardian  -- verify the diff ACTUALLY satisfies $TaskId's acceptance criteria in
-     TASKS.md. Not "looks plausible" -- traced, criterion by criterion.
+Record both under a "## Review checks" heading in REVIEW.md -- the findings AND the fact that you
+did each. If you genuinely cannot assess something (missing context, an unclear criterion), say so
+explicitly rather than assuming it passes.
 
-Both run as READ-ONLY ADVISORS. Tell each one explicitly, in the prompt you give it, that it must
-report findings back to you and must NOT edit, write, or fix any file. This run has a commit-scope
-guard that ABORTS the whole review if anything other than REVIEW.md or TASKS.md changes on disk, so
-a guardian that "helpfully" applies a fix will fail the review outright.
-
-Fold their findings into REVIEW.md under a "## Guardian Gauntlet" heading -- both the findings and
-the fact that each guardian ran.
-
-If a guardian CANNOT run (tool unavailable, agent not found, error), say so explicitly in REVIEW.md
-and treat the gauntlet as NOT PASSED. Never record a guardian as clean when it did not run. An
-unrun gate that reports "pass" is worse than no gate: it launders unaudited code as audited.
+Note the objective gate is separate and deterministic: this runner ALSO runs `npm test` itself,
+after you, before any merge. So the test suite -- not your impression -- is the hard check on
+whether the code works. Your job is the judgement the tests cannot make: does the diff meet the
+acceptance criteria, and is it safe.
 
 Then write the REVIEW.md entry: verdict (APPROVED or REWORK), must-fix items if any, nits if any.
 Set $TaskId's status in TASKS.md. Never rubber-stamp.
 
-VERDICT RULES -- the gauntlet outranks your own impression of the diff:
-  - Any CONFIRMED security finding                       => REWORK. Never approve over it.
-  - quality-guardian finds an unmet acceptance criterion => REWORK.
-  - A guardian did not run                               => do NOT choose 'done'. Use 'approved'
-                                                            at most, and say why in REVIEW.md.
+VERDICT RULES:
+  - Any real security finding              => REWORK. Never approve over it.
+  - An unmet acceptance criterion          => REWORK.
+  - Something you could not assess         => do NOT choose 'done'. 'approved' at most, and say why
+                                              in REVIEW.md.
 
 RISK-GATED MERGE (see DECISIONS D-032). Choose the status by what the task TOUCHES:
   - codex    = REWORK needed (must-fix items exist, or the gauntlet failed).
@@ -418,7 +419,7 @@ State which gate you picked, and why, at the end of the REVIEW.md entry.
     $reviewerDenyList = @('Edit(index.html)', 'Edit(tests/**)', 'Edit(playwright.config.js)')
 
     if ($OnWindows) {
-        $psi.FileName = 'cmd.exe'; $psi.Arguments = '/c claude -p --allowedTools "Read" "Glob" "Grep" "Edit" "Write" "Task" "Bash(git status)" "Bash(git diff *)" "Bash(git log *)" --disallowedTools "Edit(index.html)" "Edit(tests/**)" "Edit(playwright.config.js)"'
+        $psi.FileName = 'cmd.exe'; $psi.Arguments = '/c claude -p --allowedTools "Read" "Glob" "Grep" "Edit" "Write" "Bash(git status)" "Bash(git diff *)" "Bash(git log *)" --disallowedTools "Edit(index.html)" "Edit(tests/**)" "Edit(playwright.config.js)"'
     } else {
         # DO NOT route through `/bin/sh -c '...'` here. The grants contain both double quotes and
         # parentheses, and wrapping them in a PowerShell single-quoted string left sh with an
@@ -437,7 +438,7 @@ State which gate you picked, and why, at the end of the REVIEW.md entry.
         }
         $psi.FileName = $claudeExe
         foreach ($a in (@('-p', '--allowedTools',
-                          'Read', 'Glob', 'Grep', 'Edit', 'Write', 'Task',
+                          'Read', 'Glob', 'Grep', 'Edit', 'Write',
                           'Bash(git status)', 'Bash(git diff *)', 'Bash(git log *)',
                           '--disallowedTools') + $reviewerDenyList)) {
             [void]$psi.ArgumentList.Add($a)
