@@ -91,3 +91,95 @@ the D-032/D-042 tie-break both dictate `approved`. When torn between `done` and 
 `approved`. `main` is NOT merged; the human eyeballs the branch (ideally the browser click-through)
 and merges.
 
+## TASK-003 — Make Quick Entry's preview equal the bill it actually saves · 2026-07-25
+
+**Verdict: APPROVED** · branch `task-003` · reviewer: Claude (autonomous)
+
+Scope of the diff: `index.html` → `qeCalc()` only (≈+10 loc), plus `CHANGELOG.md`/`TEST_REPORT.md`
+evidence and AI-OS bookkeeping files. `git diff main..task-003 -- index.html` touches nothing but
+`qeCalc()`. `saveQuickEntry()`, `qeGrand()`, and `computeBill()` are unchanged. Working tree clean;
+no `tests/` change was committed (see must-fix note).
+
+### Review checks
+
+Both checks below were performed by me in this single pass (no sub-agents this run), by reading the
+diff and the surrounding functions in `index.html` directly.
+
+**1. SECURITY — RAN. CLEAN, no findings.** This is a pure client-side arithmetic change inside a
+live-preview function:
+- No Supabase query added or altered — no read path, no write path, no `persistUpsert`/`persistDelete`,
+  no outbox, no `user_id` scoping surface touched (Hard Rules 3–6 not implicated). `qeCalc()` reads
+  only the in-memory `db.bills` via `getBill()`, which was populated under the existing per-`user_id`
+  load.
+- No new DOM sink: the total and breakdown are written with `textContent`, not `innerHTML`; no
+  interpolation of user/DB strings into markup. `extras` is summed with `existing.extras.reduce((s,e)
+  => s + (+e.amount || 0), 0)` — numeric coercion, `Array.isArray` guarded, no injection surface.
+- No secret leakage; no auth change. Nothing under Hard Rules 3–6 is affected.
+
+**2. ACCEPTANCE — traced criterion by criterion against the real code, not "looks plausible".**
+I diffed `qeCalc()`'s new `total` term-by-term against `computeBill()` (index.html `computeBill`,
+the arithmetic authority) and against `saveQuickEntry()`'s call `computeBill(r.id, p, prev, curr,
+persons, wifi)` (6 args — omits the 7th `away`):
+
+- **AC-1 MET** — `qeCalc()` now adds `carryIn = existing ? (+existing.carryIn || 0) : 0` and
+  `extrasTotal = Array.isArray(existing.extras) ? existing.extras.reduce(...) : 0`, read off the
+  same `getBill(roomId, p)` bill. These are byte-identical to `computeBill()`'s own `carryIn` /
+  `extrasTotal` expressions.
+- **AC-2 MET** — `awayFlag = !!existing && !caretaker && (+existing.water === 0)` reproduces exactly
+  `computeBill()`'s fallback branch `(!!existing && !caretaker && (+existing.water === 0))` used when
+  the `away` arg is omitted — which is precisely what `saveQuickEntry()` does. `water` and `wifiAmt`
+  are both gated by `(caretaker || awayFlag) ? 0 : …`, matching `computeBill()`. Quick Entry gains
+  no away control, as required (PROP-003).
+- **AC-3 MET** — full term reconciliation: `rent + elec + water + wifiAmt + prevBal + carryIn +
+  extrasTotal` equals `computeBill()`'s `rent + electricity + water + wifi + prevBalance + carryIn +
+  extrasTotal` for the same inputs (`elec`/`electricity` both `round(kWh × elecRateFor(p))` with the
+  same `p`; `prevBal`/`prevBalance` both `getBill(roomId, prevPer(p))?.balance ?? 0`; `wifi` both
+  gated the same and, since `saveQuickEntry` always passes the checkbox, `wifiOverride` is always
+  defined so `computeBill` uses `wifiOverride ? s.wifi : 0`). `qeGrand()` sums the corrected
+  `qe-total-*` cells, so the grand total follows. The `kWh < prev` and empty-`curr` early returns
+  are untouched.
+- **AC-4 MET** — for a room with no `carryIn`, no `extras`, and not away, all three added terms are
+  0 (`carryIn=0`, `extrasTotal=0`, `awayFlag=false`), so the computed `total` is identical to the
+  pre-change `rent + elec + water + wifiAmt + prevBal`.
+- **AC-5 — DEFERRED to the objective gate.** `npm test` requires an approval that is unavailable in
+  this autonomous run, so I could not execute the suite myself. This runner runs `npm test`
+  independently after me as the hard gate; `TEST_REPORT.md` and `CHANGELOG.md` both report 32
+  passed / 0 failed. I did not personally confirm green — flagged honestly rather than assumed.
+
+**Hard Rule 7 (worked numeric examples required).** Present and correct in `TEST_REPORT.md`:
+(a) Room 101, carryIn 500 + one 300 extra, not away, curr 200 / prev 150 →
+`5000 + 850 + 300 + 300 + 0 + 500 + 300 = 7250`, preview == saved `totalDue` 7250 (pre-fix would
+have shown 6450, understated by the 500+300). (b) Away room (saved `water===0`) →
+`5000 + 850 + 0 + 0 + 0 = 5850`, preview water 0 == saved water 0. I re-verified both sums by hand
+against `computeBill()`; both hold. `computeBill()`'s arithmetic is untouched — the preview was
+aligned *to* it, satisfying the Hard Rule 7 constraint.
+
+### Must-fix
+
+None blocking approval.
+
+### Nits / follow-up (non-blocking)
+
+1. **No committed Playwright assertion.** The verification step asked for an added assertion in
+   `tests/billing-math.spec.js` proving `qeCalc()`'s displayed total == saved `totalDue` for a
+   `carryIn`+`extras` room. It was not committed — `tests/` was write-denied in the build run, and
+   this is honestly disclosed in `TEST_REPORT.md`/`CHANGELOG.md`. The numbered acceptance criteria
+   (AC-1…5) do not strictly require it (AC-5 is "32 tests"), and the reconciliation is verified by
+   term-by-term code trace + the worked examples + the build's scratchpad runtime check
+   (`{"preview":7250,"savedTotalDue":7250}` and `{"preview":5850,"savedTotalDue":5850,"savedWater":0}`).
+   A write-permitted run should land the committed assertion so the guarantee is regression-locked.
+2. **Breakdown text (`brkEl`) still omits `carryIn`/`extras`.** It shows `+bal <prevBal>` but not the
+   carryIn/extras now folded into the total, so the itemization hint is slightly incomplete while the
+   headline total is correct. Cosmetic, matches the pre-existing breakdown convention, outside the
+   acceptance criteria — noted, not a must-fix.
+
+### Merge gate
+
+**Gate chosen: `approved` (HELD for human merge) — not `done`.** This is squarely red-zone under
+Hard Rule 7: the change reconciles bill arithmetic that decides what a real tenant is asked to pay.
+Even though the numbers are now provably equal, a bill-math surface never auto-ships (D-032; the
+task's own reviewer note dictates `approved`). Additionally, AC-5's suite run is deferred to this
+runner's objective gate rather than personally confirmed, which independently bars `done`. `main` is
+NOT merged; the human confirms the green suite and, ideally, opens Quick Entry for a room with a
+transferred balance to see preview == saved before merging.
+

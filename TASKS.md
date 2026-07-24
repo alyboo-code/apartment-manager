@@ -218,7 +218,7 @@ this lands **`approved`** (held for human merge), not `done`.
 ### TASK-003 — Make Quick Entry's preview equal the bill it actually saves
 
 owner: codex
-status: review
+status: approved
 source: BQ-003
 priority: P1
 depends-on: none
