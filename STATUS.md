@@ -68,6 +68,16 @@ captures were archived to `captures/processed/2026/07/`.
   existing task was restatused. **Residual unchanged:** the leftover inbox copy still needs a human
   or write-permitted run to delete; triage skips it every time.
 
+- 2026-07-24 (second run) — 1 new capture in, 0 proposals out. `20260723T2300Z-58-unknown` (body:
+  "Go") is a bare command word — a misfired `/go` sent as plain Telegram text, the same class of
+  plumbing noise as the "Hello"/"test" captures archived earlier. Enriching it into a proposal would
+  mean inventing a problem statement, which Hard Rule 1 and "do not invent requirements" forbid.
+  Archived to `captures/processed/2026/07/` and marked `status: triaged`. Plan conversion was a
+  no-op: `planning/BUILD_QUEUE.md` holds BQ-001…BQ-006 and every one is already reflected in
+  `TASKS.md` (TASK-001…TASK-006, `source: BQ-00N`), so no task was created or restatused.
+  **Residual unchanged:** the leftover inbox copy of `20260719T1108Z-19-unknown.md` still needs a
+  human or write-permitted run to delete; triage skips it every time.
+
 ## Pipeline test — 2026-07-19
 
 Exercised the automation directly rather than reading it. Results:
