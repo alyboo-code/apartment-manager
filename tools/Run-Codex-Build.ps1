@@ -437,10 +437,14 @@ if ($codexExit -ne 0) {
     } else {
         "$engineUsed exec exited $codexExit after $([int]$duration.TotalSeconds)s. See claude-session.log for stdout/stderr."
     }
-    foreach ($t in $tracked) {
-        if ((Get-TaskStatusById $t.Id) -eq 'codex') {
-            Set-TaskStatus -TaskId $t.Id -NewStatus 'blocked' -BlockerNote $note -AutoBlock:$quotaHit
-        }
+    # Block ONLY the task we were building ($first), not the whole tracked set. The tracked set is
+    # every status: codex task at start (5, for this sprint), but a solo build only ever attempts
+    # $first -- and every high-risk task here is non-chained (Hard Rule 10), so that is always the
+    # case. Blocking all of them meant one session-limit hit on TASK-002 parked TASK-003..006 too --
+    # tasks the builder never touched -- with a note that then stranded a later good build. Untouched
+    # tasks stay codex and get retried on the next /go, which is correct.
+    if ((Get-TaskStatusById $first.Id) -eq 'codex') {
+        Set-TaskStatus -TaskId $first.Id -NewStatus 'blocked' -BlockerNote $note -AutoBlock:$quotaHit
     }
     Invoke-Git -C $root add TASKS.md
     Invoke-Git -C $root diff --cached --quiet
@@ -461,20 +465,22 @@ if ($changed.Count -gt 0) {
 }
 Invoke-Git -C $root push origin $branchName | Out-Null
 
-$statuses = $tracked | ForEach-Object { [pscustomobject]@{ Id = $_.Id; Status = (Get-TaskStatusById $_.Id) } }
-$anyBlocked = @($statuses | Where-Object { $_.Status -eq 'blocked' })
-$anyReview  = @($statuses | Where-Object { $_.Status -eq 'review' })
-$noChange   = @($statuses | Where-Object { $_.Status -eq 'codex' })
-
+$firstStatus  = (Get-TaskStatusById $first.Id)
 $fallbackNote = if ($fallbackAttempted) { " (built via $engineUsed -- fallback after $fallbackReason)" } else { "" }
 
-if ($anyBlocked.Count -gt 0) {
+# Classify by the task we were BUILDING ($first), NOT by scanning the whole tracked set. A sibling
+# task sitting blocked -- from a prior run, or a chained task that couldn't proceed -- must never
+# short-circuit the review of the task that reached review this run. Scanning the set did exactly
+# that: TASK-002 built cleanly and reached review, but four stale TASK-003..006 blocks made
+# $anyBlocked fire first, so the runner reported "BLOCKED (4 of 5)" and skipped TASK-002's review
+# entirely. Only $first's own outcome decides this build's result.
+if ($firstStatus -eq 'blocked') {
     Invoke-Git -C $root checkout main | Out-Null
-    Write-Result "$($first.Id) build reached BLOCKED ($($anyBlocked.Count) of $($tracked.Count) tracked task(s)) after $([int]$duration.TotalSeconds)s$fallbackNote. See the blocker note(s) in TASKS.md on $branchName."
+    Write-Result "$($first.Id) build reached BLOCKED after $([int]$duration.TotalSeconds)s$fallbackNote. See the blocker note in TASKS.md on $branchName."
     exit 1
 }
 
-if ($anyReview.Count -gt 0) {
+if ($firstStatus -eq 'review') {
     # BUG 1 GUARD (ported from the sibling repos): a build can flip a task to `status: review` while
     # producing NO actual work -- a "claimed but empty" fix. Before handing off, require real
     # evidence on the branch. A genuine build changes app code AND, per AGENTS.md's Definition of
@@ -486,9 +492,7 @@ if ($anyReview.Count -gt 0) {
         $_ -notmatch '^TASKS\.md$' -and $_ -notmatch '^captures/replies/OUTBOX\.md$' -and $_ -notmatch '^\.last-phase-result\.txt$'
     })
     if ($evidence.Count -eq 0) {
-        foreach ($t in $anyReview) {
-            Set-TaskStatus -TaskId $t.Id -NewStatus 'blocked' -BlockerNote "$engineUsed exec marked this task review but committed nothing beyond TASKS.md -- no app code, no CHANGELOG.md, no TEST_REPORT.md. A claimed-but-empty fix; not handed to review. See claude-session.log."
-        }
+        Set-TaskStatus -TaskId $first.Id -NewStatus 'blocked' -BlockerNote "$engineUsed exec marked this task review but committed nothing beyond TASKS.md -- no app code, no CHANGELOG.md, no TEST_REPORT.md. A claimed-but-empty fix; not handed to review. See claude-session.log."
         Invoke-Git -C $root add TASKS.md
         Invoke-Git -C $root diff --cached --quiet
         if ($LASTEXITCODE -ne 0) { Invoke-Git -C $root commit -m "$($first.Id): review claimed with no evidence, marked blocked" | Out-Null }
@@ -498,7 +502,7 @@ if ($anyReview.Count -gt 0) {
         exit 1
     }
 
-    $buildMsg = "$($first.Id) build reached REVIEW ($($anyReview.Count) of $($tracked.Count) tracked task(s)) after $([int]$duration.TotalSeconds)s$fallbackNote, pushed to $branchName."
+    $buildMsg = "$($first.Id) build reached REVIEW after $([int]$duration.TotalSeconds)s$fallbackNote, pushed to $branchName."
     Add-Content -Path $logFile -Value "[Run-Codex-Build] $buildMsg"
     # Auto-chain: no separate manual /review step needed after a clean build. Stay on $branchName for
     # this call (Run-Claude-Review.ps1 checks it out itself, harmless no-op since we're already there)
@@ -515,10 +519,11 @@ if ($anyReview.Count -gt 0) {
     exit 0
 }
 
-# Engine exited 0 but none of the tracked tasks moved off status: codex -- fail loud rather than
-# silently reporting success for a run that made no verifiable progress.
-foreach ($t in $noChange) {
-    Set-TaskStatus -TaskId $t.Id -NewStatus 'blocked' -BlockerNote "$engineUsed exec exited 0 after $([int]$duration.TotalSeconds)s but made no tracked progress on this task. See claude-session.log."
+# Engine exited 0 but $first never moved off status: codex -- no verifiable progress on the task we
+# were building. Block ONLY $first (untouched siblings stay codex to retry), same scoping as the
+# failure path above.
+if ((Get-TaskStatusById $first.Id) -eq 'codex') {
+    Set-TaskStatus -TaskId $first.Id -NewStatus 'blocked' -BlockerNote "$engineUsed exec exited 0 after $([int]$duration.TotalSeconds)s but made no tracked progress on this task. See claude-session.log."
 }
 Invoke-Git -C $root add TASKS.md
 Invoke-Git -C $root diff --cached --quiet
