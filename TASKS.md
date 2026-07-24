@@ -134,7 +134,7 @@ path and the `db` assignment — squarely in the Hard Rule 4 red zone. It must n
 ### TASK-002 — Fix "Go to Billing": correct target month, target room, and nav highlight
 
 owner: codex
-status: approved
+status: done
 source: BQ-002
 priority: P1
 depends-on: none
